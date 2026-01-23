@@ -152,6 +152,19 @@ Verify internally that:
 Do NOT output this workflow or any intermediate reasoning.
 
 --------------------------------------------------------------------
+COVERAGE CONSTRAINT (NON-NEGOTIABLE)
+--------------------------------------------------------------------
+You MUST generate a set of risks such that:
+
+• There is AT LEAST **1 risk for EACH** taxonomy category in {taxonomy}.
+• Categories are strict; each risk MUST map to EXACTLY ONE category.
+• If you are uncertain about a category, still produce a plausible emerging risk
+  framed at a high level (no fabricated specifics), rather than omitting it.
+
+This is a governance requirement: the broad scan must provide baseline coverage
+across the full taxonomy before downstream refinement begins.
+
+--------------------------------------------------------------------
 OUTPUT REQUIREMENTS (STRUCTURE IS MANDATORY)
 --------------------------------------------------------------------
 Return a structured object with ONE key: "risks"
