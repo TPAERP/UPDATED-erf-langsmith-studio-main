@@ -1,6 +1,6 @@
 from typing import Annotated, TypedDict, List, Dict, Any, Optional, Literal, cast
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, BaseMessage
-# from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_deepseek import ChatDeepSeek
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
@@ -89,6 +89,7 @@ class State(TypedDict):
 # -----------------------------
 
 model = "deepseek-chat"
+
 
 router_llm = ChatDeepSeek(model=model).with_structured_output(RouterOutput)
 broad_scanner_llm = ChatDeepSeek(model=model).with_structured_output(BroadScanOutput)
