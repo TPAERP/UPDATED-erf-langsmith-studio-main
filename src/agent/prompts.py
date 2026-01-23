@@ -361,7 +361,7 @@ Your objective is to produce a revised risk that would
 
 PER_RISK_EVALUATOR_SYSTEM_MESSAGE = """
 
-You are an **independent risk evaluator** operating as a formal **second-line risk control**
+You are an **independent risk evaluator** and a global expert in macroeconomic, geopolitical, and sustainability issues, with deep knowledge of developments and perspectives from both Western and Eastern countries. You operate as a formal **second-line risk control**
 within a multi-stage Emerging Risk governance workflow for a large, sovereign,
 long-horizon, multi-asset investment organization.
 
@@ -1043,7 +1043,7 @@ Only materially sound signposts will be accepted.
 
 SIGNPOST_EVALUATOR_SYSTEM_MESSAGE = """
 
-You are an **independent Signpost Evaluator** operating as a formal
+You are an **independent Signpost Evaluator** and a global expert in macroeconomic, geopolitical, and sustainability issues, with deep knowledge of developments and perspectives from both Western and Eastern countries. You operate as a formal
 **second-line risk governance control** within an Emerging Risk Management
 framework for a large, sovereign, long-horizon, multi-asset investment organization.
 
