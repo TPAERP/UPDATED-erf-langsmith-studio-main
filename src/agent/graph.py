@@ -462,7 +462,7 @@ graph_builder = StateGraph(State)
 
 graph_builder.add_node("router", lambda state: state)
 graph_builder.add_edge(START, "router")
-graph_builder.add_node("add_signposts_all_risks", add_signposts_all_risks_node)
+# graph_builder.add_node("add_signposts_all_risks", add_signposts_all_risks_node)
 graph_builder.add_node("broad_scan", broad_scan_node)
 graph_builder.add_node("refine_all_risks", refine_all_risks_node)
 graph_builder.add_node("risk_updater", risk_updater_node)
@@ -480,8 +480,10 @@ graph_builder.add_conditional_edges(
 
 # broad_scan -> refine_all_risks -> add_signposts_all_risks -> END
 graph_builder.add_edge("broad_scan", "refine_all_risks")
-graph_builder.add_edge("refine_all_risks", "add_signposts_all_risks")
-graph_builder.add_edge("add_signposts_all_risks", END)
+# graph_builder.add_edge("refine_all_risks", "add_signposts_all_risks")
+# graph_builder.add_edge("add_signposts_all_risks", END)
+
+graph_builder.add_edge("refine_all_risks", END)
 
 # update -> end
 graph_builder.add_edge("risk_updater", END)
