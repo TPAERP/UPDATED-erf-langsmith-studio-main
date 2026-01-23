@@ -214,7 +214,7 @@ def refine_all_risks_node(state: State) -> Dict[str, Any]:
 
     taxonomy = ["Geopolitical","Financial","Trade","Macroeconomics","Military conflict","Climate","Technological","Public Health"]
 
-    max_rounds_per_risk = 4  # guardrail
+    max_rounds_per_risk = 1  # guardrail
     refined: List[RiskDraft] = []
 
     for idx, draft in enumerate(state["risk"]["risks"], start=1):
@@ -283,7 +283,7 @@ def add_signposts_all_risks_node(state: State) -> Dict[str, Any]:
 
     taxonomy = ["Geopolitical","Financial","Trade","Macroeconomics","Military conflict","Climate","Technological","Public Health"]
 
-    max_rounds_per_risk = 4
+    max_rounds_per_risk = 1
     final_risks: List[RiskFinal] = []
 
     for idx, risk in enumerate(state["risk"]["risks"], start=1):
