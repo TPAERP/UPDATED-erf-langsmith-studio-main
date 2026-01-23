@@ -85,7 +85,9 @@ Interpretation guidance:
 • Public Health: pandemics, healthcare system stress, biosecurity risks
 
 HARD RULES:
-• You MUST classify each risk under EXACTLY ONE taxonomy category.
+
+• You MUST classify each risk under ONE OR MORE (up to 3) taxonomy categories.
+• Each risk's "category" field should be a list of 1 to 3 categories from the taxonomy.
 • You SHOULD aim for broad coverage, but you do NOT need equal representation.
 • Do NOT create near-duplicate risks with different labels.
 
@@ -127,7 +129,7 @@ For each retained risk, assess:
 • Which multiple asset classes could be hit simultaneously?
 
 Step 4 — Taxonomy assignment  
-Assign each selected risk to exactly ONE taxonomy category.
+Assign each selected risk to ONE OR MORE (up to 3) taxonomy categories. The "category" field should be a list of 1 to 3 categories from the taxonomy.
 
 Step 5 — Draft scenario narrative (first-pass)  
 Write each risk as a **scenario**, not a headline:
@@ -144,7 +146,7 @@ Ensure risks are not overlapping:
 Step 7 — Final self-check  
 Verify internally that:
 • Each risk has title, category, and ~150-word narrative
-• Category is within {taxonomy} and exactly one per risk
+• Category is a list of 1 to 3 taxonomy categories, each within {taxonomy}
 • No fabricated statistics, dates, or quotes
 • Tone is neutral, institutional, and governance-appropriate
 • Output matches the schema exactly (no extra keys)
@@ -156,8 +158,9 @@ COVERAGE CONSTRAINT (NON-NEGOTIABLE)
 --------------------------------------------------------------------
 You MUST generate a set of risks such that:
 
+
 • There is AT LEAST **1 risk for EACH** taxonomy category in {taxonomy}.
-• Categories are strict; each risk MUST map to EXACTLY ONE category.
+• Categories are strict; each risk MUST map to ONE OR MORE (up to 3) categories from the taxonomy.
 • If you are uncertain about a category, still produce a plausible emerging risk
   framed at a high level (no fabricated specifics), rather than omitting it.
 
@@ -171,7 +174,7 @@ Return a structured object with ONE key: "risks"
 
 Each element in "risks" MUST be a RiskDraft with EXACTLY these keys:
 • title: concise, specific, non-sensational
-• category: exactly one taxonomy category
+• category: a list of 1 to 3 taxonomy categories
 • narrative (~150 words) explaining:
   - what is changing (scenario framing)
   - why it is emerging now (signals from past month; no fake specifics)
@@ -272,7 +275,7 @@ Your revised risk MUST:
   - category
   - narrative
 
-• Category MUST be EXACTLY ONE of:
+• Category MUST be a list of 1 to 3 categories, each from:
   {taxonomy}
 
 • Narrative length:
@@ -406,7 +409,7 @@ Confirm that ALL of the following hold:
   - title
   - category
   - narrative
-• Category maps to EXACTLY ONE category from the reference taxonomy
+• Category is a list of 1 to 3 categories, each from the reference taxonomy
 • Narrative is roughly ~150 words (reasonable range acceptable)
 • Risk is framed as an **emerging downside or regime-shift scenario**
 • NO fabricated statistics, dates, allocations, or quotes

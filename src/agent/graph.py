@@ -46,7 +46,7 @@ class RouterOutput(TypedDict):
 
 class RiskDraft(TypedDict):
     title: str = Field(description="Name of risk (concise, specific)")
-    category: str = Field(description="Category of risk (must be one of taxonomy)")
+    category: List[str] = Field(description="List of 1 to 3 taxonomy categories for this risk (each must be from taxonomy)")
     narrative: str = Field(description="~150 word narrative of risk (scenario-based)")
 
 class BroadScanOutput(TypedDict):
@@ -111,9 +111,11 @@ def last_human_content(messages: List[BaseMessage]) -> str:
     return ""
 
 def format_risk_md(r: RiskDraft, i: int) -> str:
+    categories = r["category"] if isinstance(r["category"], list) else [r["category"]]
+    categories_str = ", ".join(categories)
     return "\n".join([
         f"## Risk {i}: {r['title']}",
-        f"**Category:** {r['category']}",
+        f"**Categories:** {categories_str}",
         "",
         "**Narrative**",
         r["narrative"].strip(),
@@ -356,8 +358,10 @@ def add_signposts_all_risks_node(state: State) -> Dict[str, Any]:
     # Render output
     md = ["# Final Risk Register (with Signposts)\n"]
     for i, r in enumerate(final_risks, start=1):
+        categories = r["category"] if isinstance(r["category"], list) else [r["category"]]
+        categories_str = ", ".join(categories)
         md.append(f"## Risk {i}: {r['title']}")
-        md.append(f"**Category:** {r['category']}\n")
+        md.append(f"**Categories:** {categories_str}\n")
         md.append("**Narrative**")
         md.append(r["narrative"].strip() + "\n")
         md.append(format_signposts_md(r["signposts"]))
