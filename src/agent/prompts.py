@@ -62,12 +62,15 @@ Avoid:
 --------------------------------------------------------------------
 SCOPE AND TIMEFRAME
 --------------------------------------------------------------------
-• Use information and signals primarily from the **past 1 month**
+• Use information and signals primarily from the **past 1 month**, and specify the timing of developments explicitly.
 • Scenario relevance horizon: **6 months to 3 years**
 • Short-term events are relevant only if they signal a broader regime shift
 
-Do NOT invent statistics, precise dates, quotes, or “confirmed” facts you cannot verify.
-Use prudent, institutional language and acknowledge uncertainty where appropriate.
+You MUST cite sources explicitly, including report titles, dates, author names, and direct attributions (e.g., "Reuters reported on June 3, 2024...").
+You MUST specify what "recent" means, including concrete timing and events.
+You MUST describe the developments or events, including triggers, timing, and who reported or authored them.
+Do NOT fabricate statistics, precise dates, quotes, or “confirmed” facts you cannot verify.
+Use prudent, institutional language and acknowledge uncertainty where appropriate, citing the source of uncertainty.
 
 --------------------------------------------------------------------
 RISK TAXONOMY (STRICT CATEGORIES; FLEXIBLE COUNTS)
@@ -97,7 +100,7 @@ CRITICAL DIFFERENCE vs “FULL REGISTER”
 This BROAD scan is a **first-pass draft** only.
 
 At this stage:
-✅ REQUIRED: title, category, narrative
+✅ REQUIRED: title, category, narrative (with explicit source citations and attributions)
 ❌ DO NOT INCLUDE: signposts, probabilities, severity scores, action plans, scenario tables
 
 Downstream evaluators and specialist scanners will refine each risk later.
@@ -134,7 +137,7 @@ Assign each selected risk to ONE OR MORE (up to 3) taxonomy categories. The "cat
 Step 5 — Draft scenario narrative (first-pass)  
 Write each risk as a **scenario**, not a headline:
 • What structural change is occurring
-• Why it is emerging now (recent signals; no fabricated specifics)
+• Why it is emerging now (with explicit source citations, timing, and events; do not use vague "recent" references)
 • How it could escalate over 6-36 months
 • Why it is material for this portfolio (cross-asset exposure + correlation risk)
 
@@ -147,6 +150,7 @@ Step 7 — Final self-check
 Verify internally that:
 • Each risk has title, category, and ~150-word narrative
 • Category is a list of 1 to 3 taxonomy categories, each within {taxonomy}
+• All sources, events, and developments are cited explicitly with timing and attribution
 • No fabricated statistics, dates, or quotes
 • Tone is neutral, institutional, and governance-appropriate
 • Output matches the schema exactly (no extra keys)
@@ -158,11 +162,10 @@ COVERAGE CONSTRAINT (NON-NEGOTIABLE)
 --------------------------------------------------------------------
 You MUST generate a set of risks such that:
 
-
 • There is AT LEAST **1 risk for EACH** taxonomy category in {taxonomy}.
 • Categories are strict; each risk MUST map to ONE OR MORE (up to 3) categories from the taxonomy.
 • If you are uncertain about a category, still produce a plausible emerging risk
-  framed at a high level (no fabricated specifics), rather than omitting it.
+  framed at a high level (with explicit source citation and timing), rather than omitting it.
 
 This is a governance requirement: the broad scan must provide baseline coverage
 across the full taxonomy before downstream refinement begins.
@@ -177,7 +180,7 @@ Each element in "risks" MUST be a RiskDraft with EXACTLY these keys:
 • category: a list of 1 to 3 taxonomy categories
 • narrative (~150 words) explaining:
   - what is changing (scenario framing)
-  - why it is emerging now (signals from past month; no fake specifics)
+  - why it is emerging now (with explicit source citations, timing, and events)
   - how it propagates to markets (cross-asset transmission)
   - why this portfolio is exposed (equities + FI + real assets / correlation risk)
 
@@ -190,7 +193,7 @@ QUALITY CONSTRAINTS
 • Neutral, institutional tone
 • No alarmism or sensationalism
 • No false precision (invented data, allocations, exact dates, quotes)
-• Explicitly acknowledge uncertainty where appropriate
+• Explicitly acknowledge uncertainty where appropriate, citing the source
 • Each risk must be meaningfully distinct and portfolio-material
 
 Remain available for professional follow-up Q&A.
@@ -257,7 +260,7 @@ REVISION OBJECTIVE
 Produce a **fully corrected, governance-ready version** of the SAME risk that:
 
 • Is clearly framed as an **emerging downside or regime-shift scenario**
-• Is grounded in **recent signals (past ~1 month)** without fabricated specifics
+• Is grounded in **recent signals (past ~1 month)** with explicit source citations, timing, and events
 • Has a coherent **propagation mechanism across multiple asset classes**
 • Clearly explains **why this sovereign portfolio is exposed**
 • Uses a neutral, institutional, decision-support tone
@@ -286,7 +289,7 @@ Your revised risk MUST:
 • Do NOT:
   - add signposts
   - add probabilities, scores, or severity labels
-  - invent statistics, dates, quotes, or “confirmed” facts
+  - invent statistics, dates, or quotes you cannot verify
   - introduce new risks or split this risk into multiple risks
 
 --------------------------------------------------------------------
@@ -299,8 +302,8 @@ The revised narrative MUST explicitly cover:
      technological adoption, climate dynamics, or institutional behaviour
 
 2) **Why this risk is emerging NOW**
-   - reference recent developments at a high level
-   - do NOT fabricate precise dates or figures
+   - reference recent developments at a high level, but with explicit source citations, timing, and events
+   - do NOT use vague "recent" references; specify when and who reported or authored the development
    - uncertainty is acceptable; false precision is not
 
 3) **How the risk propagates**
@@ -336,6 +339,7 @@ Before responding, verify internally:
 • All evaluator feedback points are fully addressed
 • Narrative reads as a scenario, not a summary
 • Portfolio relevance is explicit and credible
+• All sources, events, and developments are cited explicitly with timing and attribution
 • No fabricated or unverifiable claims are present
 • Output strictly matches the required schema
 
@@ -412,7 +416,8 @@ Confirm that ALL of the following hold:
 • Category is a list of 1 to 3 categories, each from the reference taxonomy
 • Narrative is roughly ~150 words (reasonable range acceptable)
 • Risk is framed as an **emerging downside or regime-shift scenario**
-• NO fabricated statistics, dates, allocations, or quotes
+• All sources, events, and developments are cited explicitly with timing and attribution
+• NO fabricated statistics, dates, allocations, or quotes you cannot verify
 • Tone is neutral, institutional, and non-sensational
 
 If ANY hard constraint is violated:
@@ -618,12 +623,15 @@ Your goal is to improve **decision usefulness**, not to maximise output volume.
 --------------------------------------------------------------------
 SCOPE AND TIMEFRAME
 --------------------------------------------------------------------
-• Focus on signals primarily from the **past 1 month**
+• Focus on signals primarily from the **past 1 month**, and specify the timing of developments explicitly.
 • Consider implications over a **6-month to 3-year horizon**
 • Short-term events are relevant ONLY if they signal a broader regime shift
 
-Do NOT fabricate statistics, precise dates, quotes, or “confirmed” facts.
-High-level, uncertainty-aware language is expected.
+You MUST cite sources explicitly, including report titles, dates, author names, and direct attributions (e.g., "Reuters reported on June 3, 2024...").
+You MUST specify what "recent" means, including concrete timing and events.
+You MUST describe the developments or events, including triggers, timing, and who reported or authored them.
+Do NOT fabricate statistics, precise dates, quotes, or “confirmed” facts you cannot verify.
+High-level, uncertainty-aware language is expected, with explicit source citation.
 
 --------------------------------------------------------------------
 WHAT AN “UPDATE” MEANS (IMPORTANT)
@@ -667,7 +675,7 @@ For EVERY risk in the UPDATED register:
 
 • The narrative MUST:
   - describe an emerging downside or regime-shift scenario
-  - explain recent developments motivating the update
+  - explain recent developments motivating the update, with explicit source citations, timing, and events
   - describe cross-asset transmission
   - explain why this portfolio is exposed
 
