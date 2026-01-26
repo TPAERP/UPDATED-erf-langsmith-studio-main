@@ -283,6 +283,7 @@ def refine_all_risks_node(state: State) -> Dict[str, Any]:
                 SOURCE_GUIDE=SOURCE_GUIDE,
                 feedback=eval_out["feedback"],
                 current_risk=current,
+                FEW_SHOT_EXAMPLES=FEW_SHOT_EXAMPLES
             )
 
             users_query = last_human_content(state["messages"])
