@@ -5,10 +5,12 @@ from langchain_deepseek import ChatDeepSeek
 from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph.message import add_messages
+from langgraph.constants import Send
 from pydantic import Field
 from dotenv import load_dotenv
 import sys
 from pathlib import Path
+import operator
 
 # Ensure ./src is on the Python import path when this file is loaded directly
 SRC_DIR = Path(__file__).resolve().parents[1]  # .../<repo>/src
@@ -92,9 +94,19 @@ class RiskFinal(TypedDict):
     audit_log: List[str]
 
 class State(TypedDict):
-    risk: Optional[BroadScanOutput]
+    # We separate 'drafts' (input) from 'finalized' (output)
+    draft_risks: List[RiskDraft] 
+    
+    # operator.add ensures that when parallel nodes return a list, 
+    # they are appended to this master list rather than overwriting it.
+    finalized_risks: Annotated[List[RiskDraft], operator.add]
+    
     messages: Annotated[List[BaseMessage], add_messages]
     attempts: int
+
+# This is the "Sub-State" passed to each parallel worker
+class RiskExecutionState(TypedDict):
+    risk_candidate: RiskDraft
 
 # -----------------------------
 # LLMs
@@ -224,109 +236,110 @@ def broad_scan_node(state: State) -> Dict[str, Any]:
     )
 
     users_query = last_human_content(state["messages"])
-    user_msg = f"User request / context (may be empty):\n{users_query}".strip()
-
+    
     out = broad_scanner_llm.invoke([
         SystemMessage(content=system),
-        HumanMessage(content=user_msg),
+        HumanMessage(content=users_query),
     ])
 
+    # CHANGE: We populate 'draft_risks' instead of the generic 'risk' key
+    # We also clear 'finalized_risks' to ensure a fresh start
     return {
-        "risk": out,
-        "messages": [AIMessage(content=f"Broad scan produced {len(out['risks'])} draft risks. Refining each risk now...")],
-        "attempts": state.get("attempts", 0),
+        "draft_risks": out["risks"],
+        "finalized_risks": [], # Reset output
+        "messages": [AIMessage(content=f"Broad scan generated {len(out['risks'])} candidates. Refining in parallel...")],
     }
 
 # -----------------------------
-# Per-risk refinement loop (evaluator <-> specific scanner)
+# 3. The Parallel Worker (The Refinement Logic)
 # -----------------------------
 
-def refine_all_risks_node(state: State) -> Dict[str, Any]:
-    state.setdefault("risk", None)
-    state.setdefault("attempts", 0)
-    state.setdefault("messages", [])
-
-    if not state.get("risk") or not state["risk"].get("risks"):
-        return {
-            "messages": [AIMessage(content="No risks found to refine. Try running a scan first.")],
-            "risk": state.get("risk"),
-        }
+def refine_single_risk_node(state: RiskExecutionState) -> Dict[str, Any]:
+    """
+    Processes a SINGLE risk entirely independently.
+    Runs the Refiner <-> Evaluator loop for this specific item.
+    """
+    current = state["risk_candidate"]
+    
+    # Initialize audit trail if missing
+    if "audit_log" not in current:
+        current["audit_log"] = ["Draft generated during broad horizon scanning."]
+    if "reasoning_trace" not in current:
+        current["reasoning_trace"] = "Initial scan selection."
 
     taxonomy = ["Geopolitical","Financial","Trade","Macroeconomics","Military conflict","Climate","Technological","Public Health"]
+    max_rounds = 3  # Configurable
 
-    max_rounds_per_risk = 4  # guardrail
-    refined: List[RiskDraft] = []
+    for round_i in range(1, max_rounds + 1):
+        # 1. Helper to format markdown for the LLM
+        # (Using a simplified index '0' since we are isolated here)
+        formatted_risk = format_risk_md(current, 0) 
 
-    for idx, draft in enumerate(state["risk"]["risks"], start=1):
-        current = draft
+        # 2. Evaluate
+        eval_system = PER_RISK_EVALUATOR_SYSTEM_MESSAGE.format(
+            PORTFOLIO_ALLOCATION=PORTFOLIO_ALLOCATION,
+            SOURCE_GUIDE=SOURCE_GUIDE,
+        )
+        eval_user = PER_RISK_EVALUATOR_USER_MESSAGE.format(
+            taxonomy=taxonomy,
+            risk=formatted_risk,
+        )
+
+        eval_out = per_risk_evaluator_llm.invoke([
+            SystemMessage(content=eval_system),
+            HumanMessage(content=eval_user),
+        ])
+
+        # 3. Decision Logic
+        if eval_out["satisfied_with_risk"]:
+            current["audit_log"].append("Passed independent governance review.")
+            break # Exit loop, risk is done
         
-        # Initialize audit log with a narrative sentence if empty
-        if "audit_log" not in current:
-            current["audit_log"] = ["Draft generated during broad horizon scanning."]
-        if "reasoning_trace" not in current:
-            current["reasoning_trace"] = "Initial scan selection."
+        # 4. Revise if failed
+        current["audit_log"].append(f"Evaluator Feedback: '{eval_out['feedback']}'.")
+        
+        spec_system = SPECIFIC_RISK_SCANNER_SYSTEM_MESSAGE.format(
+            taxonomy=taxonomy,
+            PORTFOLIO_ALLOCATION=PORTFOLIO_ALLOCATION,
+            SOURCE_GUIDE=SOURCE_GUIDE,
+            feedback=eval_out["feedback"],
+            current_risk=formatted_risk,
+            FEW_SHOT_EXAMPLES=FEW_SHOT_EXAMPLES
+        )
+        
+        # Note: In a parallel node, we don't easily have access to the full conversation history 
+        # unless we pass it in. Usually, the risk context + feedback is enough.
+        spec_user = "Revise the risk strictly according to the feedback."
 
-        for round_i in range(1, max_rounds_per_risk + 1):
-            # Format the current risk for the system message
-            formatted_risk = format_risk_md(current, idx)
+        new_draft = specific_scanner_llm.invoke([
+            SystemMessage(content=spec_system),
+            HumanMessage(content=spec_user),
+        ])
+        
+        # Merge Audit Logs
+        new_draft["audit_log"] = current["audit_log"] + ["Narrative refined to address feedback."]
+        current = new_draft
 
-            # 1) Evaluate single risk
-            eval_system = PER_RISK_EVALUATOR_SYSTEM_MESSAGE.format(
-                PORTFOLIO_ALLOCATION=PORTFOLIO_ALLOCATION,
-                SOURCE_GUIDE=SOURCE_GUIDE,
-            )
-            eval_user = PER_RISK_EVALUATOR_USER_MESSAGE.format(
-                taxonomy=taxonomy,
-                risk=formatted_risk,  # Pass formatted risk here
-            )
+    # RETURN: We return a dictionary that updates the Main State.
+    # Because 'finalized_risks' is Annotated with operator.add, this list is APPENDED to the main state.
+    return {"finalized_risks": [current]}
 
-            eval_out = per_risk_evaluator_llm.invoke([
-                SystemMessage(content=eval_system),
-                HumanMessage(content=eval_user),
-            ])
 
-            if eval_out["satisfied_with_risk"]:
-                # Log success as a narrative sentence
-                current["audit_log"].append("Passed independent governance review.")
-                break
+# -----------------------------
+# 4. The Mapper (Conditional Edge)
+# -----------------------------
 
-            # 2) If not satisfied -> revise single risk
-            # Log failure as a narrative sentence
-            current["audit_log"].append(f"Independent evaluator flagged deficiencies: '{eval_out['feedback']}'.")
-
-            spec_system = SPECIFIC_RISK_SCANNER_SYSTEM_MESSAGE.format(
-                taxonomy=taxonomy,
-                PORTFOLIO_ALLOCATION=PORTFOLIO_ALLOCATION,
-                SOURCE_GUIDE=SOURCE_GUIDE,
-                feedback=eval_out["feedback"],
-                current_risk=formatted_risk,  # Pass formatted risk here
-                FEW_SHOT_EXAMPLES=FEW_SHOT_EXAMPLES
-            )
-
-            users_query = last_human_content(state["messages"])
-            spec_user = f"Revise the risk accordingly. User context:\n{users_query}".strip()
-
-            new_draft = specific_scanner_llm.invoke([
-                SystemMessage(content=spec_system),
-                HumanMessage(content=spec_user),
-            ])
-            
-            # 3) Merge Metadata
-            # Append narrative revision note
-            update_note = "Narrative refined to address evaluator feedback."
-            new_draft["audit_log"] = current["audit_log"] + [update_note]
-            
-            current = new_draft
-
-        refined.append(current)
-
-    final_md = format_all_risks_md(refined)
-
-    return {
-        "risk": {"risks": refined},
-        "messages": [AIMessage(content=final_md)],
-        "attempts": state.get("attempts", 0),
-    }
+def initiate_parallel_refinement(state: State):
+    """
+    Maps the list of draft risks to parallel 'refine_single_risk_node' calls.
+    """
+    drafts = state.get("draft_risks", [])
+    
+    # We use Send(node_name, state_for_node)
+    return [
+        Send("refine_single_risk", {"risk_candidate": draft}) 
+        for draft in drafts
+    ]
 
 def add_signposts_all_risks_node(state: State) -> Dict[str, Any]:
     """
@@ -528,22 +541,36 @@ User question:
     }
 
 # -----------------------------
-# Build graph
+# 5. Graph Construction (Corrected)
 # -----------------------------
 
 graph_builder = StateGraph(State)
 
+# FIX 1: Define 'router' as a pass-through node (returns current state), 
+# NOT the routing function itself (which returns a string).
 graph_builder.add_node("router", lambda state: state)
-graph_builder.add_edge(START, "router")
+
+# Add other nodes
 graph_builder.add_node("broad_scan", broad_scan_node)
-graph_builder.add_node("refine_all_risks", refine_all_risks_node)
-# graph_builder.add_node("add_signposts_all_risks", add_signposts_all_risks_node)
+graph_builder.add_node("refine_single_risk", refine_single_risk_node)
 graph_builder.add_node("risk_updater", risk_updater_node)
 graph_builder.add_node("elaborator", elaborator_node)
 
+# Add aggregation/formatting node if you want to render the final markdown
+def render_report_node(state: State):
+    # Takes the aggregated 'finalized_risks' and formats them
+    final_md = format_all_risks_md(state["finalized_risks"])
+    return {"messages": [AIMessage(content=final_md)]}
+
+graph_builder.add_node("render_report", render_report_node)
+
+# Edges
+graph_builder.add_edge(START, "router")
+
+# FIX 2: Use 'router_node' ONLY here in the conditional logic
 graph_builder.add_conditional_edges(
     "router",
-    router_node,
+    router_node,  # This function returns "broad_scan", "risk_updater", etc.
     {
         "broad_scan": "broad_scan",
         "risk_updater": "risk_updater",
@@ -551,17 +578,15 @@ graph_builder.add_conditional_edges(
     }
 )
 
-# broad_scan -> refine_all_risks -> add_signposts_all_risks -> END
-graph_builder.add_edge("broad_scan", "refine_all_risks")
-#graph_builder.add_edge("refine_all_risks", "add_signposts_all_risks")
-graph_builder.add_edge("refine_all_risks", END)
-#graph_builder.add_edge("add_signposts_all_risks", END)
+# Parallel Branching: Broad Scan -> Map -> Refine
+graph_builder.add_conditional_edges("broad_scan", initiate_parallel_refinement)
 
-# update -> end
+# Refine -> Render -> End
+graph_builder.add_edge("refine_single_risk", "render_report")
+graph_builder.add_edge("render_report", END)
+
+# Other paths
 graph_builder.add_edge("risk_updater", END)
-
-# qna -> end
 graph_builder.add_edge("elaborator", END)
 
-memory = MemorySaver()
 graph = graph_builder.compile()
