@@ -168,9 +168,22 @@ You MUST perform the following steps internally:
 5. Taxonomy assignment
 6. Self-Correction
 
-**OUTPUT REQUIREMENT:**
-In the `reasoning_trace` field, you must write a **single, cohesive paragraph** (NO bullet points, NO "Step 1" labels) that synthesizes this logic.
-Narrate *why* you selected this risk, citing the specific signal, how you determined it was material for this specific portfolio (referencing specific allocation traits), and any self-corrections you made to strengthen the draft. It should read like a thoughtful analyst's rationale.
+--------------------------------------------------------------------
+INTERNAL REASONING WORKFLOW (TRACE REQUIREMENT)
+--------------------------------------------------------------------
+You MUST document your thinking process as a **structured, numbered list**. 
+Do NOT write a paragraph.
+
+Required format for `reasoning_trace`:
+1. **Signal Identification**: [What specific event or data point triggered this?]
+2. **Materiality Check**: [How did you verify this matters to the specific Portfolio Context?]
+3. **Propagation Logic**: [Step-by-step, how does this transmit to asset classes?]
+4. **Conclusion**: [Why is this distinct from general market noise?]
+
+**NEGATIVE CONSTRAINTS:**
+- Do NOT write a summary paragraph.
+- Do NOT use continuous prose.
+- You MUST use line breaks and numbering (1., 2., 3., 4.).
 
 --------------------------------------------------------------------
 COVERAGE CONSTRAINT (NON-NEGOTIABLE)
@@ -291,8 +304,39 @@ Produce a **fully corrected, governance-ready version** of the SAME risk that:
 • Clearly explains **why this sovereign portfolio is exposed**
 • Uses a neutral, institutional, decision-support tone
 
-You must also update the **reasoning_trace** field.
-Do NOT list steps. Write a **unified paragraph** that summarizes the original rationale and then explicitly explains *how* you modified the narrative to address the evaluator's concerns (e.g., "Originally selected due to X; revised to clarify Y based on feedback regarding Z").
+--------------------------------------------------------------------
+REASONING TRACE UPDATE (CUMULATIVE LOG)
+--------------------------------------------------------------------
+You must update the `reasoning_trace` field.
+This field acts as a **permanent record** of the risk's evolution.
+
+You MUST:
+1. **Preserve** the existing reasoning steps provided in the input (do not delete the broad scan or previous refinement logic).
+2. **Append** a new section for this specific refinement round at the bottom.
+3. Use the following **numbered list format**:
+
+[...Existing steps from input...]
+
+**Refinement Round:**
+X. **Feedback Analysis**: [Critique summary]
+Y. **Adjustment**: [Specific changes made to narrative]
+
+**NEGATIVE CONSTRAINTS:**
+- Do NOT delete the previous reasoning.
+- Do NOT summarize the history; copy it and append to it.
+
+[GOOD EXAMPLE - REASONING TRACE FORMAT]
+Title: Fragmented Critical Mineral Supply Chains
+...
+Reasoning Trace:
+1. **Signal Identification**: On Nov 4, [Country A] announced an immediate export ban on gallium and germanium. On Nov 6, [Country B] retaliated with screening investments in mining.
+2. **Materiality Check**: The portfolio has a 12% allocation to "Green Transition Infrastructure" (Real Assets). These assets rely on stable capex costs.
+3. **Propagation Logic**: Export bans -> Supply shortage -> 30-40% spike in input costs for solar/wind projects -> IRR compression below hurdle rates -> Valuation write-downs in Real Assets.
+4. **Initial Conclusion**: Selected because this specific trade war directly attacks the "inflation-linkage" thesis of the Infrastructure book.
+
+**Refinement Round 1:**
+5. **Feedback Analysis**: The evaluator correctly pointed out that I missed the impact on Public Equities (Semi-conductors).
+6. **Adjustment**: I revised the narrative to include "margin compression for diversified chipmakers" to ensure the risk covers both Real Assets and Equities as requested.
 
 --------------------------------------------------------------------
 HARD STRUCTURAL CONSTRAINTS (NON-NEGOTIABLE)

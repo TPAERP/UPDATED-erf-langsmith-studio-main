@@ -52,7 +52,7 @@ class RiskDraft(TypedDict):
     # --- AUDIT TRAIL FIELDS ---
     reasoning_trace: str = Field(
         default="", 
-        description="A cohesive narrative paragraph summarizing the analyst's internal reasoning, signal selection, and materiality checks."
+        description="Strict numbered list (1., 2., 3...) detailing the step-by-step derivation of the risk."
     )
     audit_log: List[str] = Field(
         default_factory=list, 
@@ -143,14 +143,13 @@ def format_risk_md(r: RiskDraft, i: int) -> str:
     # Format Audit Trail as a narrative blockquote
     audit_section = ""
     if r.get("audit_log"):
-        # Join as a single paragraph block
         audit_text = " ".join(r["audit_log"])
         audit_section += f"\n> **Governance History:**\n> {audit_text}\n"
     
-    # Format Reasoning Trace as an italicized note
+    # Format Reasoning Trace
     reasoning_section = ""
     if r.get("reasoning_trace"):
-        reasoning_section += f"\n_**Analyst Reasoning:** {r['reasoning_trace']}_\n"
+        reasoning_section += f"\n**Analyst Reasoning:**\n{r['reasoning_trace']}\n"
 
     return "\n".join([
         f"## Risk {i}: {r['title']}",
