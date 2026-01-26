@@ -27,7 +27,6 @@ from agent.prompts import (
     SIGNPOST_GENERATOR_USER_MESSAGE,
     SIGNPOST_EVALUATOR_SYSTEM_MESSAGE,
     SIGNPOST_EVALUATOR_USER_MESSAGE
-
 )
 
 from agent.portfolio_allocation import PORTFOLIO_ALLOCATION
@@ -46,8 +45,18 @@ class RouterOutput(TypedDict):
 
 class RiskDraft(TypedDict):
     title: str = Field(description="Name of risk (concise, specific)")
-    category: List[str] = Field(description="List of 1 to 3 taxonomy categories for this risk (each must be from taxonomy)")
+    category: List[str] = Field(description="List of 1 to 3 taxonomy categories for this risk")
     narrative: str = Field(description="~150 word narrative of risk (scenario-based)")
+    
+    # --- AUDIT TRAIL FIELDS ---
+    reasoning_trace: str = Field(
+        default="", 
+        description="A cohesive narrative paragraph summarizing the analyst's internal reasoning, signal selection, and materiality checks."
+    )
+    audit_log: List[str] = Field(
+        default_factory=list, 
+        description="Chronological log of governance events (reviews, rejections, revisions) formatted as narrative sentences."
+    )
 
 class BroadScanOutput(TypedDict):
     risks: List[RiskDraft] = Field(description="Draft risks from broad scanner")
@@ -57,8 +66,8 @@ class PerRiskEvalOutput(TypedDict):
     feedback: str = Field(description="Actionable feedback if not acceptable (or brief OK note)")
 
 class RiskUpdateOutput(TypedDict):
-    risks: List[RiskDraft] = Field(description="Updated risk register (title/category/narrative)")
-    change_log: List[str] = Field(description="Bullet list describing what changed and why (brief, non-fabricated)")
+    risks: List[RiskDraft] = Field(description="Updated risk register")
+    change_log: List[str] = Field(description="Bullet list describing what changed and why")
 
 class Signpost(TypedDict):
     description: str = Field(description="Observable, monitorable indicator")
@@ -68,8 +77,8 @@ class SignpostPack(TypedDict):
     signposts: List[Signpost] = Field(description="Exactly 3 signposts with status")
 
 class SignpostEvalOutput(TypedDict):
-    satisfied_with_signposts: bool = Field(description="Whether signposts are acceptable for this risk")
-    feedback: str = Field(description="Actionable feedback if not acceptable (or brief OK note)")
+    satisfied_with_signposts: bool = Field(description="Whether signposts are acceptable")
+    feedback: str = Field(description="Actionable feedback if not acceptable")
 
 
 class RiskFinal(TypedDict):
@@ -77,11 +86,13 @@ class RiskFinal(TypedDict):
     category: str
     narrative: str
     signposts: List[Signpost]
+    # Pass audit trail to final output
+    reasoning_trace: str
+    audit_log: List[str]
 
 class State(TypedDict):
     risk: Optional[BroadScanOutput]
     messages: Annotated[List[BaseMessage], add_messages]
-    # you can keep these if useful later
     attempts: int
 
 # -----------------------------
@@ -89,7 +100,6 @@ class State(TypedDict):
 # -----------------------------
 
 model = "deepseek-chat"
-
 
 router_llm = ChatDeepSeek(model=model).with_structured_output(RouterOutput)
 broad_scanner_llm = ChatDeepSeek(model=model).with_structured_output(BroadScanOutput)
@@ -113,12 +123,27 @@ def last_human_content(messages: List[BaseMessage]) -> str:
 def format_risk_md(r: RiskDraft, i: int) -> str:
     categories = r["category"] if isinstance(r["category"], list) else [r["category"]]
     categories_str = ", ".join(categories)
+    
+    # Format Audit Trail as a narrative blockquote
+    audit_section = ""
+    if r.get("audit_log"):
+        # Join as a single paragraph block
+        audit_text = " ".join(r["audit_log"])
+        audit_section += f"\n> **Governance History:**\n> {audit_text}\n"
+    
+    # Format Reasoning Trace as an italicized note
+    reasoning_section = ""
+    if r.get("reasoning_trace"):
+        reasoning_section += f"\n_**Analyst Reasoning:** {r['reasoning_trace']}_\n"
+
     return "\n".join([
         f"## Risk {i}: {r['title']}",
         f"**Categories:** {categories_str}",
         "",
         "**Narrative**",
         r["narrative"].strip(),
+        reasoning_section,
+        audit_section,
         "",
         "---",
         ""
@@ -182,7 +207,6 @@ def broad_scan_node(state: State) -> Dict[str, Any]:
         SOURCE_GUIDE=SOURCE_GUIDE,
     )
 
-    # If you want broad scan to take user query into account, pass it (recommended)
     users_query = last_human_content(state["messages"])
     user_msg = f"User request / context (may be empty):\n{users_query}".strip()
 
@@ -191,7 +215,6 @@ def broad_scan_node(state: State) -> Dict[str, Any]:
         HumanMessage(content=user_msg),
     ])
 
-    # We don't output yet; we refine per risk next
     return {
         "risk": out,
         "messages": [AIMessage(content=f"Broad scan produced {len(out['risks'])} draft risks. Refining each risk now...")],
@@ -208,7 +231,6 @@ def refine_all_risks_node(state: State) -> Dict[str, Any]:
     state.setdefault("messages", [])
 
     if not state.get("risk") or not state["risk"].get("risks"):
-        # Nothing to refine
         return {
             "messages": [AIMessage(content="No risks found to refine. Try running a scan first.")],
             "risk": state.get("risk"),
@@ -216,11 +238,17 @@ def refine_all_risks_node(state: State) -> Dict[str, Any]:
 
     taxonomy = ["Geopolitical","Financial","Trade","Macroeconomics","Military conflict","Climate","Technological","Public Health"]
 
-    max_rounds_per_risk = 1  # guardrail
+    max_rounds_per_risk = 4  # guardrail
     refined: List[RiskDraft] = []
 
     for idx, draft in enumerate(state["risk"]["risks"], start=1):
         current = draft
+        
+        # Initialize audit log with a narrative sentence if empty
+        if "audit_log" not in current:
+            current["audit_log"] = ["Draft generated during broad horizon scanning."]
+        if "reasoning_trace" not in current:
+            current["reasoning_trace"] = "Initial scan selection."
 
         for round_i in range(1, max_rounds_per_risk + 1):
             # 1) Evaluate single risk
@@ -239,9 +267,14 @@ def refine_all_risks_node(state: State) -> Dict[str, Any]:
             ])
 
             if eval_out["satisfied_with_risk"]:
+                # Log success as a narrative sentence
+                current["audit_log"].append("Passed independent governance review.")
                 break
 
-            # 2) If not satisfied -> revise single risk with specific scanner + feedback
+            # 2) If not satisfied -> revise single risk
+            # Log failure as a narrative sentence
+            current["audit_log"].append(f"Independent evaluator flagged deficiencies: '{eval_out['feedback']}'.")
+
             spec_system = SPECIFIC_RISK_SCANNER_SYSTEM_MESSAGE.format(
                 taxonomy=taxonomy,
                 PORTFOLIO_ALLOCATION=PORTFOLIO_ALLOCATION,
@@ -250,14 +283,20 @@ def refine_all_risks_node(state: State) -> Dict[str, Any]:
                 current_risk=current,
             )
 
-            # You can optionally include user query context here too
             users_query = last_human_content(state["messages"])
-            spec_user = f"Revise the risk accordingly. User context (may be empty):\n{users_query}".strip()
+            spec_user = f"Revise the risk accordingly. User context:\n{users_query}".strip()
 
-            current = specific_scanner_llm.invoke([
+            new_draft = specific_scanner_llm.invoke([
                 SystemMessage(content=spec_system),
                 HumanMessage(content=spec_user),
             ])
+            
+            # 3) Merge Metadata
+            # Append narrative revision note
+            update_note = "Narrative refined to address evaluator feedback."
+            new_draft["audit_log"] = current["audit_log"] + [update_note]
+            
+            current = new_draft
 
         refined.append(current)
 
@@ -271,8 +310,8 @@ def refine_all_risks_node(state: State) -> Dict[str, Any]:
 
 def add_signposts_all_risks_node(state: State) -> Dict[str, Any]:
     """
-    Takes state['risk'] which must contain {'risks': [RiskDraft...]} (finalized narratives)
-    and returns {'risks': [RiskFinal...]} with EXACTLY 3 signposts per risk.
+    Takes state['risk'] and returns {'risks': [RiskFinal...]} with signposts.
+    Preserves audit trails.
     """
     state.setdefault("risk", None)
     state.setdefault("messages", [])
@@ -284,7 +323,6 @@ def add_signposts_all_risks_node(state: State) -> Dict[str, Any]:
         }
 
     taxonomy = ["Geopolitical","Financial","Trade","Macroeconomics","Military conflict","Climate","Technological","Public Health"]
-
     max_rounds_per_risk = 1
     final_risks: List[RiskFinal] = []
 
@@ -292,23 +330,21 @@ def add_signposts_all_risks_node(state: State) -> Dict[str, Any]:
         current_pack: Optional[SignpostPack] = None
 
         for round_i in range(1, max_rounds_per_risk + 1):
-            # 1) Generate signposts if none yet (or if revising)
+            # 1) Generate signposts
             gen_system = SIGNPOST_GENERATOR_SYSTEM_MESSAGE.format(
                 taxonomy=taxonomy,
                 PORTFOLIO_ALLOCATION=PORTFOLIO_ALLOCATION,
                 SOURCE_GUIDE=SOURCE_GUIDE,
             )
 
-            # If we have evaluator feedback, incorporate it as user message
             users_query = last_human_content(state["messages"])
             gen_user = SIGNPOST_GENERATOR_USER_MESSAGE.format(
                 risk=risk,
                 user_context=users_query,
                 prior_signposts=current_pack,
-                feedback=None,  # will be filled only if evaluator rejects (below)
+                feedback=None,
             )
 
-            # If we are revising due to evaluator feedback (stored in current_pack via loop), we override gen_user later
             if current_pack is None:
                 current_pack = signpost_generator_llm.invoke([
                     SystemMessage(content=gen_system),
@@ -334,7 +370,7 @@ def add_signposts_all_risks_node(state: State) -> Dict[str, Any]:
             if eval_out["satisfied_with_signposts"]:
                 break
 
-            # 3) If rejected: regenerate signposts using evaluator feedback
+            # 3) If rejected: regenerate
             regen_user = SIGNPOST_GENERATOR_USER_MESSAGE.format(
                 risk=risk,
                 user_context=users_query,
@@ -347,12 +383,14 @@ def add_signposts_all_risks_node(state: State) -> Dict[str, Any]:
                 HumanMessage(content=regen_user),
             ])
 
-        # finalize this risk
+        # Finalize risk (Include Audit Data)
         final_risks.append({
             "title": risk["title"],
             "category": risk["category"],
             "narrative": risk["narrative"],
             "signposts": current_pack["signposts"] if current_pack else [],
+            "reasoning_trace": risk.get("reasoning_trace", ""),
+            "audit_log": risk.get("audit_log", [])
         })
 
     # Render output
@@ -364,7 +402,18 @@ def add_signposts_all_risks_node(state: State) -> Dict[str, Any]:
         md.append(f"**Categories:** {categories_str}\n")
         md.append("**Narrative**")
         md.append(r["narrative"].strip() + "\n")
+        
+        # Display Audit info in final output
+        if r.get("reasoning_trace"):
+            md.append(f"_**Analyst Reasoning:** {r['reasoning_trace']}_")
+        
         md.append(format_signposts_md(r["signposts"]))
+        
+        if r.get("audit_log"):
+             # Join as paragraph
+             log_text = " ".join(r["audit_log"])
+             md.append(f"\n> **Governance History:**\n> {log_text}")
+                 
         md.append("\n---\n")
 
     return {
@@ -374,7 +423,7 @@ def add_signposts_all_risks_node(state: State) -> Dict[str, Any]:
 
 
 # -----------------------------
-# Risk updater (kept, but aligned to draft schema)
+# Risk updater
 # -----------------------------
 
 def risk_updater_node(state: State) -> Dict[str, Any]:
@@ -466,9 +515,9 @@ graph_builder = StateGraph(State)
 
 graph_builder.add_node("router", lambda state: state)
 graph_builder.add_edge(START, "router")
-# graph_builder.add_node("add_signposts_all_risks", add_signposts_all_risks_node)
 graph_builder.add_node("broad_scan", broad_scan_node)
 graph_builder.add_node("refine_all_risks", refine_all_risks_node)
+# graph_builder.add_node("add_signposts_all_risks", add_signposts_all_risks_node)
 graph_builder.add_node("risk_updater", risk_updater_node)
 graph_builder.add_node("elaborator", elaborator_node)
 
@@ -484,10 +533,9 @@ graph_builder.add_conditional_edges(
 
 # broad_scan -> refine_all_risks -> add_signposts_all_risks -> END
 graph_builder.add_edge("broad_scan", "refine_all_risks")
-# graph_builder.add_edge("refine_all_risks", "add_signposts_all_risks")
-# graph_builder.add_edge("add_signposts_all_risks", END)
-
+#graph_builder.add_edge("refine_all_risks", "add_signposts_all_risks")
 graph_builder.add_edge("refine_all_risks", END)
+#graph_builder.add_edge("add_signposts_all_risks", END)
 
 # update -> end
 graph_builder.add_edge("risk_updater", END)

@@ -106,56 +106,18 @@ At this stage:
 Downstream evaluators and specialist scanners will refine each risk later.
 
 --------------------------------------------------------------------
-INTERNAL REASONING WORKFLOW (DO INTERNALLY; DO NOT OUTPUT)
+INTERNAL REASONING WORKFLOW (NARRATIVE TRACE)
 --------------------------------------------------------------------
-Before writing the final RiskDraft objects, follow this workflow internally:
+You MUST perform the following steps internally:
+1. Broad signal scan
+2. Portfolio materiality filter
+3. Regime/propagation test
+4. Taxonomy assignment
+5. Self-Correction
 
-Step 1 — Broad signal scan  
-Scan the past month for emerging signals across: {taxonomy}
-
-Step 2 — Portfolio materiality filter  
-Retain only risks that are materially relevant for the sovereign portfolio context above:
-• equities drawdown sensitivity (growth/earnings/valuations/liquidity)
-• fixed income regime exposure (inflation, term premia, fiscal credibility, correlation stability)
-• real assets vulnerability (financing costs, illiquidity, inflation linkage, policy risk)
-
-Step 3 — Regime and propagation test  
-For each retained risk, assess:
-• Does this represent a potential regime shift or structural break?
-• How would it propagate across:
-  - growth and earnings
-  - inflation and policy reaction
-  - rates/term premia
-  - credit spreads and default risk
-  - FX and global liquidity
-  - real assets and financing conditions
-• Which multiple asset classes could be hit simultaneously?
-
-Step 4 — Taxonomy assignment  
-Assign each selected risk to ONE OR MORE (up to 3) taxonomy categories. The "category" field should be a list of 1 to 3 categories from the taxonomy.
-
-Step 5 — Draft scenario narrative (first-pass)  
-Write each risk as a **scenario**, not a headline:
-• What structural change is occurring
-• Why it is emerging now (with explicit source citations, timing, and events; do not use vague "recent" references)
-• How it could escalate over 6-36 months
-• Why it is material for this portfolio (cross-asset exposure + correlation risk)
-
-Step 6 — Distinctness check  
-Ensure risks are not overlapping:
-• Each risk should have a distinct catalyst + transmission channel
-• Avoid multiple “US recession” variants unless clearly different mechanisms
-
-Step 7 — Final self-check  
-Verify internally that:
-• Each risk has title, category, and ~150-word narrative
-• Category is a list of 1 to 3 taxonomy categories, each within {taxonomy}
-• All sources, events, and developments are cited explicitly with timing and attribution
-• No fabricated statistics, dates, or quotes
-• Tone is neutral, institutional, and governance-appropriate
-• Output matches the schema exactly (no extra keys)
-
-Do NOT output this workflow or any intermediate reasoning.
+**OUTPUT REQUIREMENT:**
+In the `reasoning_trace` field, you must write a **single, cohesive paragraph** (NO bullet points, NO "Step 1" labels) that synthesizes this logic.
+Narrate *why* you selected this risk, citing the specific signal, how you determined it was material for this specific portfolio, and any self-corrections you made to strengthen the draft. It should read like a thoughtful analyst's rationale.
 
 --------------------------------------------------------------------
 COVERAGE CONSTRAINT (NON-NEGOTIABLE)
@@ -183,6 +145,8 @@ Each element in "risks" MUST be a RiskDraft with EXACTLY these keys:
   - why it is emerging now (with explicit source citations, timing, and events)
   - how it propagates to markets (cross-asset transmission)
   - why this portfolio is exposed (equities + FI + real assets / correlation risk)
+• reasoning_trace: A single cohesive paragraph explaining the selection logic and materiality check (NO bullets/steps).
+• audit_log: An empty list [] (this will be filled by downstream evaluators).
 
 Do NOT include signposts at this stage.
 Do NOT include any other commentary, headings, markdown, or extra fields.
@@ -265,8 +229,8 @@ Produce a **fully corrected, governance-ready version** of the SAME risk that:
 • Clearly explains **why this sovereign portfolio is exposed**
 • Uses a neutral, institutional, decision-support tone
 
-This is NOT a cosmetic rewrite.
-This is NOT a partial fix.
+You must also update the **reasoning_trace** field.
+Do NOT list steps. Write a **unified paragraph** that summarizes the original rationale and then explicitly explains *how* you modified the narrative to address the evaluator's concerns (e.g., "Originally selected due to X; revised to clarify Y based on feedback regarding Z").
 
 --------------------------------------------------------------------
 HARD STRUCTURAL CONSTRAINTS (NON-NEGOTIABLE)
@@ -277,6 +241,8 @@ Your revised risk MUST:
   - title
   - category
   - narrative
+  - reasoning_trace (Updated as a narrative paragraph)
+  - audit_log (You must pass back the existing list provided in the input; do not clear it)
 
 • Category MUST be a list of 1 to 3 categories, each from:
   {taxonomy}
@@ -322,16 +288,6 @@ Avoid:
 • single-asset or purely tactical framings
 
 --------------------------------------------------------------------
-DISCIPLINE AND DISTINCTNESS
---------------------------------------------------------------------
-Ensure that the refined risk:
-
-• Is clearly distinct from other common macro risks
-• Has a unique catalyst + transmission channel
-• Does NOT overlap heavily with generic “global slowdown” or “market volatility” themes
-• Would be recognisable and discussable in a senior risk committee
-
---------------------------------------------------------------------
 INTERNAL SELF-CHECK (DO INTERNALLY; DO NOT OUTPUT)
 --------------------------------------------------------------------
 Before responding, verify internally:
@@ -349,8 +305,8 @@ OUTPUT RULES (STRICT)
 Return ONLY the revised Risk object for this SINGLE risk.
 
 • No commentary
-• No explanations
-• No references to the evaluator or feedback
+• No explanations outside the `reasoning_trace`
+• No references to the evaluator or feedback in the narrative itself
 • No extra keys or formatting
 
 Your objective is to produce a revised risk that would
@@ -401,6 +357,7 @@ You are evaluating a **single risk draft** with ONLY these fields:
 • title
 • category
 • narrative
+• reasoning_trace (for context only; do not grade this field)
 
 Signposts are NOT expected at this stage and MUST NOT be required.
 
@@ -996,7 +953,7 @@ For EACH signpost, assign exactly one status:
   - limited confirmation across policy, markets, or data
 
 • Rising:
-  - signals becoming more frequent, credible, or reinforcing
+  - signals are becoming more frequent, credible, or reinforcing
   - multiple indicators starting to align
 
 • Elevated:
@@ -1204,7 +1161,7 @@ If satisfied_with_signposts = False:
 
 If satisfied_with_signposts = True:
 • Provide a brief confirmation note (1–2 sentences)
-• Do NOT suggest additional enhancements
+• Do NOT suggest enhancements or alternative signposts
 
 --------------------------------------------------------------------
 OUTPUT RULES (STRICT)
@@ -1360,4 +1317,3 @@ Your decision will determine whether these signposts are
 accepted into the formal risk register.
 
 """.strip()
-
