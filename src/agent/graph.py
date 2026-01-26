@@ -100,7 +100,7 @@ class State(TypedDict):
 # LLMs
 # -----------------------------
 
-llm = "openai"  # "deepseek" or "openai"
+llm = "deepseek"  # "deepseek" or "openai"
 if llm == "openai":
     model = "gpt-4o-mini"
     router_llm = ChatOpenAI(model=model).with_structured_output(RouterOutput)
@@ -268,6 +268,9 @@ def refine_all_risks_node(state: State) -> Dict[str, Any]:
             current["reasoning_trace"] = "Initial scan selection."
 
         for round_i in range(1, max_rounds_per_risk + 1):
+            # Format the current risk for the system message
+            formatted_risk = format_risk_md(current, idx)
+
             # 1) Evaluate single risk
             eval_system = PER_RISK_EVALUATOR_SYSTEM_MESSAGE.format(
                 PORTFOLIO_ALLOCATION=PORTFOLIO_ALLOCATION,
@@ -275,7 +278,7 @@ def refine_all_risks_node(state: State) -> Dict[str, Any]:
             )
             eval_user = PER_RISK_EVALUATOR_USER_MESSAGE.format(
                 taxonomy=taxonomy,
-                risk=current,
+                risk=formatted_risk,  # Pass formatted risk here
             )
 
             eval_out = per_risk_evaluator_llm.invoke([
@@ -297,7 +300,7 @@ def refine_all_risks_node(state: State) -> Dict[str, Any]:
                 PORTFOLIO_ALLOCATION=PORTFOLIO_ALLOCATION,
                 SOURCE_GUIDE=SOURCE_GUIDE,
                 feedback=eval_out["feedback"],
-                current_risk=current,
+                current_risk=formatted_risk,  # Pass formatted risk here
                 FEW_SHOT_EXAMPLES=FEW_SHOT_EXAMPLES
             )
 
