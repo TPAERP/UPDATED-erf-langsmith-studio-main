@@ -26,7 +26,8 @@ from agent.prompts import (
     SIGNPOST_GENERATOR_SYSTEM_MESSAGE,
     SIGNPOST_GENERATOR_USER_MESSAGE,
     SIGNPOST_EVALUATOR_SYSTEM_MESSAGE,
-    SIGNPOST_EVALUATOR_USER_MESSAGE
+    SIGNPOST_EVALUATOR_USER_MESSAGE,
+    FEW_SHOT_EXAMPLES 
 )
 
 from agent.portfolio_allocation import PORTFOLIO_ALLOCATION
@@ -205,6 +206,7 @@ def broad_scan_node(state: State) -> Dict[str, Any]:
         taxonomy=taxonomy,
         PORTFOLIO_ALLOCATION=PORTFOLIO_ALLOCATION,
         SOURCE_GUIDE=SOURCE_GUIDE,
+        FEW_SHOT_EXAMPLES=FEW_SHOT_EXAMPLES
     )
 
     users_query = last_human_content(state["messages"])
