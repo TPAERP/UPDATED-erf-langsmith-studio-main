@@ -37,7 +37,7 @@ SOURCE USAGE RULES:
   - exact quotations where relevant
   - precise statistics, dates, or author names
   - explicit attributions such as “Reuters reported…” or “WSJ said…"
-• You MUST specify what "recent" means, including concrete timing (e.g., "In May 2024," "On June 3, 2024," etc.).
+• You MUST specify what "recent" means, including concrete timing.
 • You MUST describe the developments or events, including triggers, timing, and who reported or authored them.
 • If uncertainty exists, clarify the nature of the uncertainty and cite the source expressing it.
 

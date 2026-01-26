@@ -74,7 +74,7 @@ SCOPE AND TIMEFRAME
 • Scenario relevance horizon: **6 months to 3 years**
 • Short-term events are relevant only if they signal a broader regime shift
 
-You MUST cite sources explicitly, including report titles, dates, author names, and direct attributions (e.g., "Reuters reported on June 3, 2024...").
+You MUST cite sources explicitly, including report titles, dates, author names, and direct attributions. 
 You MUST specify what "recent" means, including concrete timing and events.
 You MUST describe the developments or events, including triggers, timing, and who reported or authored them.
 Do NOT fabricate statistics, precise dates, quotes, or “confirmed” facts you cannot verify.
@@ -593,7 +593,7 @@ SCOPE AND TIMEFRAME
 • Consider implications over a **6-month to 3-year horizon**
 • Short-term events are relevant ONLY if they signal a broader regime shift
 
-You MUST cite sources explicitly, including report titles, dates, author names, and direct attributions (e.g., "Reuters reported on June 3, 2024...").
+You MUST cite sources explicitly, including report titles, dates, author names, and direct attributions. 
 You MUST specify what "recent" means, including concrete timing and events.
 You MUST describe the developments or events, including triggers, timing, and who reported or authored them.
 Do NOT fabricate statistics, precise dates, quotes, or “confirmed” facts you cannot verify.
