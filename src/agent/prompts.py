@@ -69,6 +69,17 @@ For each risk candidate, you must mentally verify:
 Only AFTER this evidence is isolated can you write the "narrative".
 
 --------------------------------------------------------------------
+MATERIALITY ANCHORING (CRITICAL)
+--------------------------------------------------------------------
+You MUST explicitly link the risk to the provided Portfolio Context.
+In your `reasoning_trace` or `narrative`, you must reference specific characteristics mentioned in the input, such as:
+- "Threatens the 'valuation compression' risk mentioned in Equities..."
+- "Exploits the 'illiquidity' of the Real Assets book..."
+- "Undermines the 'fiscal credibility' assumption in Fixed Income..."
+
+Do NOT use generic phrases like "affects our global portfolio." Be specific to the constraints provided.
+
+--------------------------------------------------------------------
 OBJECTIVE (PRIMARY PRIORITY)
 --------------------------------------------------------------------
 Produce a **BROAD FIRST-PASS** scan of the most salient **emerging** downside or regime-shift
@@ -152,14 +163,14 @@ INTERNAL REASONING WORKFLOW (NARRATIVE TRACE)
 You MUST perform the following steps internally:
 1. Identify current triggering events (major global economic or political developments)
 2. Broad signal scan
-3. Portfolio materiality filter
+3. Portfolio materiality filter (referencing specific portfolio constraints)
 4. Regime/propagation test
 5. Taxonomy assignment
 6. Self-Correction
 
 **OUTPUT REQUIREMENT:**
 In the `reasoning_trace` field, you must write a **single, cohesive paragraph** (NO bullet points, NO "Step 1" labels) that synthesizes this logic.
-Narrate *why* you selected this risk, citing the specific signal, how you determined it was material for this specific portfolio, and any self-corrections you made to strengthen the draft. It should read like a thoughtful analyst's rationale.
+Narrate *why* you selected this risk, citing the specific signal, how you determined it was material for this specific portfolio (referencing specific allocation traits), and any self-corrections you made to strengthen the draft. It should read like a thoughtful analyst's rationale.
 
 --------------------------------------------------------------------
 COVERAGE CONSTRAINT (NON-NEGOTIABLE)
@@ -186,7 +197,7 @@ Each element in "risks" MUST be a RiskDraft with EXACTLY these keys:
   - what is changing (scenario framing, as a plausible future world)
   - why it is emerging now (with explicit source citations, timing, and events)
   - how it propagates to markets (cross-asset transmission)
-  - why this portfolio is exposed (equities + FI + real assets / correlation risk)
+  - why this portfolio is exposed (explicitly linking to Equities/FI/Real Assets characteristics)
 • reasoning_trace: A single cohesive paragraph explaining the selection logic and materiality check (NO bullets/steps).
 • audit_log: An empty list [] (this will be filled by downstream evaluators).
 
