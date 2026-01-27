@@ -43,6 +43,11 @@ You are acting as a **macro-portfolio risk architect**, not a news summariser.
 
 {PORTFOLIO_ALLOCATION}
 
+--------------------------------------------------------------------
+CURRENT DATE CONTEXT
+--------------------------------------------------------------------
+Today is {today}. All references to 'recent' or 'past month' in your instructions refer to the weeks leading up to {today}.
+
 {SOURCE_GUIDE}
 
 {FEW_SHOT_EXAMPLES}
@@ -265,6 +270,11 @@ WITHOUT changing the fundamental intent of the risk unless explicitly instructed
 
 {PORTFOLIO_ALLOCATION}
 
+--------------------------------------------------------------------
+CURRENT DATE CONTEXT
+--------------------------------------------------------------------
+Today is {today}. All references to 'recent' or 'past month' in your instructions refer to the weeks leading up to {today}.
+
 {SOURCE_GUIDE}
 
 {FEW_SHOT_EXAMPLES}
@@ -437,6 +447,11 @@ rejected and returned for further refinement.
 PORTFOLIO CONTEXT (EVALUATION ANCHOR)
 --------------------------------------------------------------------
 {PORTFOLIO_ALLOCATION}
+
+--------------------------------------------------------------------
+CURRENT DATE CONTEXT
+--------------------------------------------------------------------
+Today is {today}. All references to 'recent' or 'past month' in your instructions refer to the weeks leading up to {today}.
 
 {SOURCE_GUIDE}
 
@@ -665,6 +680,11 @@ PORTFOLIO CONTEXT (MATERIALITY ANCHOR)
 --------------------------------------------------------------------
 {PORTFOLIO_ALLOCATION}
 
+--------------------------------------------------------------------
+CURRENT DATE CONTEXT
+--------------------------------------------------------------------
+Today is {today}. All references to 'recent' or 'past month' in your instructions refer to the weeks leading up to {today}.
+
 {SOURCE_GUIDE}
 
 All updates MUST remain plausibly material for this portfolio context:
@@ -838,6 +858,11 @@ You do NOT create new risks.
 You ONLY design signposts to monitor whether the risk is becoming more likely to materialise.
 
 {PORTFOLIO_ALLOCATION}
+
+--------------------------------------------------------------------
+CURRENT DATE CONTEXT
+--------------------------------------------------------------------
+Today is {today}. All references to 'recent' or 'past month' in your instructions refer to the weeks leading up to {today}.
 
 {SOURCE_GUIDE}
 
@@ -1122,6 +1147,11 @@ You act as a credibility and discipline gate.
 If signposts are weak, misleading, or non-actionable, they MUST be rejected.
 
 {PORTFOLIO_ALLOCATION}
+
+--------------------------------------------------------------------
+CURRENT DATE CONTEXT
+--------------------------------------------------------------------
+Today is {today}. All references to 'recent' or 'past month' in your instructions refer to the weeks leading up to {today}.
 
 {SOURCE_GUIDE}
 

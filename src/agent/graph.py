@@ -11,6 +11,9 @@ from dotenv import load_dotenv
 import sys
 from pathlib import Path
 import operator
+from datetime import datetime
+today = datetime.now().strftime("%B %d, %Y")
+
 
 # Ensure ./src is on the Python import path when this file is loaded directly
 SRC_DIR = Path(__file__).resolve().parents[1]  # .../<repo>/src
@@ -253,7 +256,8 @@ def broad_scan_node(state: State) -> Dict[str, Any]:
         taxonomy=taxonomy,
         PORTFOLIO_ALLOCATION=PORTFOLIO_ALLOCATION,
         SOURCE_GUIDE=SOURCE_GUIDE,
-        FEW_SHOT_EXAMPLES=FEW_SHOT_EXAMPLES
+        FEW_SHOT_EXAMPLES=FEW_SHOT_EXAMPLES,
+        today=today
     )
 
     users_query = last_human_content(state["messages"])
@@ -300,6 +304,7 @@ def refine_single_risk_node(state: RiskExecutionState) -> Dict[str, Any]:
         eval_system = PER_RISK_EVALUATOR_SYSTEM_MESSAGE.format(
             PORTFOLIO_ALLOCATION=PORTFOLIO_ALLOCATION,
             SOURCE_GUIDE=SOURCE_GUIDE,
+            today=today
         )
         eval_user = PER_RISK_EVALUATOR_USER_MESSAGE.format(
             taxonomy=taxonomy,
@@ -325,7 +330,8 @@ def refine_single_risk_node(state: RiskExecutionState) -> Dict[str, Any]:
             SOURCE_GUIDE=SOURCE_GUIDE,
             feedback=eval_out["feedback"],
             current_risk=formatted_risk,
-            FEW_SHOT_EXAMPLES=FEW_SHOT_EXAMPLES
+            FEW_SHOT_EXAMPLES=FEW_SHOT_EXAMPLES,
+            today=today
         )
         
         # Note: In a parallel node, we don't easily have access to the full conversation history 
@@ -386,6 +392,7 @@ def add_signposts_all_risks_node(state: State) -> Dict[str, Any]:
                 taxonomy=taxonomy,
                 PORTFOLIO_ALLOCATION=PORTFOLIO_ALLOCATION,
                 SOURCE_GUIDE=SOURCE_GUIDE,
+                today=today
             )
 
             users_query = last_human_content(state["messages"])
@@ -406,6 +413,7 @@ def add_signposts_all_risks_node(state: State) -> Dict[str, Any]:
             eval_system = SIGNPOST_EVALUATOR_SYSTEM_MESSAGE.format(
                 PORTFOLIO_ALLOCATION=PORTFOLIO_ALLOCATION,
                 SOURCE_GUIDE=SOURCE_GUIDE,
+                today=today
             )
             eval_user = SIGNPOST_EVALUATOR_USER_MESSAGE.format(
                 taxonomy=taxonomy,
@@ -491,6 +499,7 @@ def risk_updater_node(state: State) -> Dict[str, Any]:
         taxonomy=taxonomy,
         PORTFOLIO_ALLOCATION=PORTFOLIO_ALLOCATION,
         SOURCE_GUIDE=SOURCE_GUIDE,
+        today=today
     )
 
     updater_user_message = f"""
