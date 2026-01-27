@@ -143,12 +143,19 @@ elif llm == "deepseek":
 # -----------------------------
 
 def last_human_content(messages: List[BaseMessage]) -> str:
+    """
+    Returns the content of the last HumanMessage in the list.
+    If none found, returns an empty string.
+    """
     for m in reversed(messages):
         if isinstance(m, HumanMessage):
             return cast(str, m.content)
     return ""
 
 def format_risk_md(r: RiskDraft, i: int) -> str:
+    """
+    Formats a single risk draft as markdown, including audit trail and reasoning trace.
+    """
     categories = r["category"] if isinstance(r["category"], list) else [r["category"]]
     categories_str = ", ".join(categories)
     
@@ -177,6 +184,9 @@ def format_risk_md(r: RiskDraft, i: int) -> str:
     ])
 
 def format_all_risks_md(risks: List[RiskDraft]) -> str:
+    """
+    Formats all risk drafts as markdown.
+    """
     md = ["# Risk Register\n"]
     for i, r in enumerate(risks, start=1):
         md.append(format_risk_md(r, i))
@@ -189,6 +199,9 @@ def format_signposts_md(signposts: List[Signpost]) -> str:
     return "\n".join(lines)
 
 def format_conversation(messages: List[Any]) -> str:
+    """
+    Formats the conversation history from messages into a string.
+    """
     conversation = "Conversation history:\n\n"
     for message in messages:
         if isinstance(message, HumanMessage):
@@ -202,6 +215,10 @@ def format_conversation(messages: List[Any]) -> str:
 # -----------------------------
 
 def router_node(state: State) -> str:
+    """
+    Determines which path to take based on the last user query.
+    Returns one of: "broad_scan", "risk_updater", "elaborator
+    """
     users_query = last_human_content(state["messages"])
 
     router_messages = [
@@ -222,6 +239,10 @@ def router_node(state: State) -> str:
 # -----------------------------
 
 def broad_scan_node(state: State) -> Dict[str, Any]:
+    """
+    Performs a broad scan to generate initial risk drafts.
+    Uses the broad scanner LLM to generate multiple risk drafts.
+    """
     state.setdefault("risk", None)
     state.setdefault("attempts", 0)
     state.setdefault("messages", [])
@@ -331,15 +352,12 @@ def refine_single_risk_node(state: RiskExecutionState) -> Dict[str, Any]:
 
 def initiate_parallel_refinement(state: State):
     """
-    Maps the list of draft risks to parallel 'refine_single_risk_node' calls.
+    Assigns each draft risk to a risk refinement node.
     """
     drafts = state.get("draft_risks", [])
     
     # We use Send(node_name, state_for_node)
-    return [
-        Send("refine_single_risk", {"risk_candidate": draft}) 
-        for draft in drafts
-    ]
+    return [Send("refine_single_risk", {"risk_candidate": draft}) for draft in drafts]
 
 def add_signposts_all_risks_node(state: State) -> Dict[str, Any]:
     """
@@ -476,14 +494,14 @@ def risk_updater_node(state: State) -> Dict[str, Any]:
     )
 
     updater_user_message = f"""
-USER REQUEST:
-{users_query}
+            USER REQUEST:
+            {users_query}
 
-EXISTING RISK REGISTER (JSON-like):
-{existing_register}
+            EXISTING RISK REGISTER (JSON-like):
+            {existing_register}
 
-Update the register following your instructions.
-""".strip()
+            Update the register following your instructions.
+            """.strip()
 
     updated = risk_updater_llm.invoke([
         SystemMessage(content=risk_updater_system_message),
@@ -516,21 +534,21 @@ def elaborator_node(state: State) -> Dict[str, Any]:
     current_register = state.get("risk")
 
     system_message = """
-You are conducting professional Q&A about the existing risk register.
-Answer concisely, in an institutional tone. Do not fabricate specifics.
-If the register is missing, say so and suggest running a scan.
-""".strip()
+        You are conducting professional Q&A about the existing risk register.
+        Answer concisely, in an institutional tone. Do not fabricate specifics.
+        If the register is missing, say so and suggest running a scan.
+        """.strip()
 
     user_message = f"""
-Current risk register (if any):
-{current_register}
+        Current risk register (if any):
+        {current_register}
 
-Conversation so far:
-{conversation}
+        Conversation so far:
+        {conversation}
 
-User question:
-{last_query}
-""".strip()
+        User question:
+        {last_query}
+        """.strip()
 
     resp = elaborator_llm.invoke([SystemMessage(content=system_message), HumanMessage(content=user_message)])
 
@@ -540,34 +558,28 @@ User question:
         "attempts": state.get("attempts", 0),
     }
 
-# -----------------------------
-# 5. Graph Construction (Corrected)
-# -----------------------------
-
-graph_builder = StateGraph(State)
-
-# FIX 1: Define 'router' as a pass-through node (returns current state), 
-# NOT the routing function itself (which returns a string).
-graph_builder.add_node("router", lambda state: state)
-
-# Add other nodes
-graph_builder.add_node("broad_scan", broad_scan_node)
-graph_builder.add_node("refine_single_risk", refine_single_risk_node)
-graph_builder.add_node("risk_updater", risk_updater_node)
-graph_builder.add_node("elaborator", elaborator_node)
-
-# Add aggregation/formatting node if you want to render the final markdown
 def render_report_node(state: State):
-    # Takes the aggregated 'finalized_risks' and formats them
+    """
+    Renders the final risk register as markdown.
+    """
     final_md = format_all_risks_md(state["finalized_risks"])
     return {"messages": [AIMessage(content=final_md)]}
 
+# -----------------------------
+# 5. Graph Construction
+# -----------------------------
+
+# add nodes
+graph_builder = StateGraph(State)
+graph_builder.add_node("router", lambda state: state) # router returns current state
+graph_builder.add_node("broad_scan", broad_scan_node)
+graph_builder.add_node("refine_single_risk", refine_single_risk_node)
 graph_builder.add_node("render_report", render_report_node)
+graph_builder.add_node("risk_updater", risk_updater_node)
+graph_builder.add_node("elaborator", elaborator_node)
 
-# Edges
+# add edges
 graph_builder.add_edge(START, "router")
-
-# FIX 2: Use 'router_node' ONLY here in the conditional logic
 graph_builder.add_conditional_edges(
     "router",
     router_node,  # This function returns "broad_scan", "risk_updater", etc.
@@ -578,15 +590,8 @@ graph_builder.add_conditional_edges(
     }
 )
 
-# Parallel Branching: Broad Scan -> Map -> Refine
-graph_builder.add_conditional_edges("broad_scan", initiate_parallel_refinement)
-
-# Refine -> Render -> End
+graph_builder.add_conditional_edges("broad_scan", initiate_parallel_refinement,["refine_single_risk"])
 graph_builder.add_edge("refine_single_risk", "render_report")
 graph_builder.add_edge("render_report", END)
-
-# Other paths
-graph_builder.add_edge("risk_updater", END)
-graph_builder.add_edge("elaborator", END)
 
 graph = graph_builder.compile()
