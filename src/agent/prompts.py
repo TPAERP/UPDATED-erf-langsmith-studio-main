@@ -176,19 +176,21 @@ You MUST perform the following steps internally:
 --------------------------------------------------------------------
 INTERNAL REASONING WORKFLOW (TRACE REQUIREMENT)
 --------------------------------------------------------------------
+
 You MUST document your thinking process as a **structured, numbered list**. 
-Do NOT write a paragraph.
+Each step must begin with the step number followed by the title in bold.
 
 Required format for `reasoning_trace`:
 1. **Signal Identification**: [What specific event or data point triggered this?]
 2. **Materiality Check**: [How did you verify this matters to the specific Portfolio Context?]
 3. **Propagation Logic**: [Step-by-step, how does this transmit to asset classes?]
-4. **Conclusion**: [Why is this distinct from general market noise?]
+4. **Initial Conclusion**: [Why is this distinct from general market noise?]
 
 **NEGATIVE CONSTRAINTS:**
-- Do NOT write a summary paragraph.
-- Do NOT use continuous prose.
-- You MUST use line breaks and numbering (1., 2., 3., 4.).
+- Do NOT use headers like "Signal Identification:" as standalone lines.
+- Do NOT write as a continuous paragraph.
+- Every step MUST start with a number (1., 2., etc.) on a new line.
+
 
 --------------------------------------------------------------------
 COVERAGE CONSTRAINT (NON-NEGOTIABLE)
@@ -317,36 +319,33 @@ Produce a **fully corrected, governance-ready version** of the SAME risk that:
 --------------------------------------------------------------------
 REASONING TRACE UPDATE (CUMULATIVE LOG)
 --------------------------------------------------------------------
-You must update the `reasoning_trace` field.
-This field acts as a **permanent record** of the risk's evolution.
+You MUST update the `reasoning_trace` field.
 
-You MUST:
-1. **Preserve** the existing reasoning steps provided in the input (do not delete the broad scan or previous refinement logic).
-2. **Append** a new section for this specific refinement round at the bottom.
-3. Use the following **numbered list format**:
-
-[...Existing steps from input...]
-
-**Refinement Round:**
-X. **Feedback Analysis**: [Critique summary]
-Y. **Adjustment**: [Specific changes made to narrative]
-
-**NEGATIVE CONSTRAINTS:**
-- Do NOT delete the previous reasoning.
-- Do NOT summarize the history; copy it and append to it.
-
-[GOOD EXAMPLE - REASONING TRACE FORMAT]
-Title: Fragmented Critical Mineral Supply Chains
-...
-Reasoning Trace:
-1. **Signal Identification**: On Nov 4, [Country A] announced an immediate export ban on gallium and germanium. On Nov 6, [Country B] retaliated with screening investments in mining.
-2. **Materiality Check**: The portfolio has a 12% allocation to "Green Transition Infrastructure" (Real Assets). These assets rely on stable capex costs.
-3. **Propagation Logic**: Export bans -> Supply shortage -> 30-40% spike in input costs for solar/wind projects -> IRR compression below hurdle rates -> Valuation write-downs in Real Assets.
-4. **Initial Conclusion**: Selected because this specific trade war directly attacks the "inflation-linkage" thesis of the Infrastructure book.
+Required format:
+1. **Signal Identification**: ...
+2. **Materiality Check**: ...
+3. **Propagation Logic**: ...
+4. **Initial Conclusion**: ...
 
 **Refinement Round 1:**
-5. **Feedback Analysis**: The evaluator correctly pointed out that I missed the impact on Public Equities (Semi-conductors).
-6. **Adjustment**: I revised the narrative to include "margin compression for diversified chipmakers" to ensure the risk covers both Real Assets and Equities as requested.
+5. **Feedback Analysis**: [Summary of evaluator critique]
+6. **Adjustment**: [Specific changes made]
+
+**NEGATIVE CONSTRAINTS:**
+- Do NOT use bold headers without numbers (e.g., do NOT write "**Signal Identification**" on its own line).
+- Ensure "Refinement Round X:" is on its own line before the numbered steps.
+- Maintain the incrementing count (if the input ends at 4, start at 5).
+
+[GOOD EXAMPLE - REASONING TRACE FORMAT]
+Reasoning Trace:
+1. **Signal Identification**: On Nov 4, [Country A] announced an export ban.
+2. **Materiality Check**: Portfolio has 12% allocation to Green Infrastructure.
+3. **Propagation Logic**: Supply shortage -> 30% spike in input costs -> IRR compression.
+4. **Initial Conclusion**: Selected due to direct attack on Infrastructure book inflation-linkage.
+
+**Refinement Round 1:**
+5. **Feedback Analysis**: Evaluator noted missing impact on Public Equities.
+6. **Adjustment**: Revised narrative to include margin compression for chipmakers.
 
 --------------------------------------------------------------------
 HARD STRUCTURAL CONSTRAINTS (NON-NEGOTIABLE)
