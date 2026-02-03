@@ -17,6 +17,8 @@ class WebSearchConfigError(RuntimeError):
 
 def _pick_provider() -> str:
     provider = (os.getenv("WEB_SEARCH_PROVIDER") or "").strip().lower()
+    if provider in {"ddg", "duckduckgo", "duckduckgosearch"}:
+        return "ddg"
     if provider in {"serper", "brave", "bing"}:
         return provider
 
@@ -26,10 +28,7 @@ def _pick_provider() -> str:
         return "brave"
     if os.getenv("BING_API_KEY"):
         return "bing"
-    raise WebSearchConfigError(
-        "No web search provider configured. Set WEB_SEARCH_PROVIDER to one of "
-        "'serper'/'brave'/'bing' and provide the corresponding API key."
-    )
+    return "ddg"
 
 
 def _http_json(
@@ -135,8 +134,77 @@ def _bing_search(query: str, *, num: int = 4) -> List[WebSearchResult]:
     return out
 
 
+def _ddg_search(query: str, *, num: int = 4) -> List[WebSearchResult]:
+    """
+    DuckDuckGo search without API keys.
+
+    Prefers the `duckduckgo_search` library if present; otherwise falls back to
+    parsing the DuckDuckGo HTML results page.
+    """
+    try:
+        # Optional dependency; user may not have it installed.
+        from duckduckgo_search import DDGS  # type: ignore
+
+        out: List[WebSearchResult] = []
+        with DDGS() as ddgs:
+            for item in ddgs.text(query, max_results=num):
+                out.append(
+                    {
+                        "title": (item.get("title") or "").strip(),
+                        "url": (item.get("href") or "").strip(),
+                        "snippet": (item.get("body") or "").strip(),
+                        "published": "",
+                    }
+                )
+        return out
+    except Exception:
+        pass
+
+    # Fallback: scrape the HTML endpoint (best-effort).
+    qs = urllib.parse.urlencode({"q": query})
+    url = f"https://duckduckgo.com/html/?{qs}"
+    req = urllib.request.Request(
+        url,
+        method="GET",
+        headers={
+            "Accept": "text/html",
+            "User-Agent": "Mozilla/5.0",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=25) as resp:
+        html = resp.read().decode("utf-8", errors="replace")
+
+    # Very small parser: extract result anchors + snippets.
+    import html as _html
+    import re
+
+    # Links are typically: <a rel="nofollow" class="result__a" href="...">Title</a>
+    link_re = re.compile(r'<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>(.*?)</a>', re.IGNORECASE)
+    snippet_re = re.compile(r'<a[^>]+class="result__snippet"[^>]*>(.*?)</a>', re.IGNORECASE)
+    tag_re = re.compile(r"<[^>]+>")
+
+    links = link_re.findall(html)
+    snippets = snippet_re.findall(html)
+
+    out: List[WebSearchResult] = []
+    for i, (href, title_html) in enumerate(links[:num]):
+        title = _html.unescape(tag_re.sub("", title_html)).strip()
+        snippet = _html.unescape(tag_re.sub("", snippets[i])).strip() if i < len(snippets) else ""
+        out.append(
+            {
+                "title": title,
+                "url": href.strip(),
+                "snippet": snippet,
+                "published": "",
+            }
+        )
+    return out
+
+
 def _search(query: str, *, num: int = 4) -> List[WebSearchResult]:
     provider = _pick_provider()
+    if provider == "ddg":
+        return _ddg_search(query, num=num)
     if provider == "serper":
         return _serper_search(query, num=num)
     if provider == "brave":
@@ -196,6 +264,7 @@ def web_search_node(state: TaxonomyExecutionState) -> Dict[str, Any]:
         }
 
     try:
+        provider = _pick_provider()
         queries = _plan_queries(taxonomy, today_iso=today_iso)
         sources: List[WebSearchResult] = []
         seen_urls = set()
@@ -262,13 +331,20 @@ Search results:
             ]
         }
     except Exception as e:  # pragma: no cover
+        hint = (
+            "\n\nTip: DuckDuckGo HTML search can be rate-limited; if this keeps failing, "
+            "install the optional `duckduckgo-search` package or configure a key-based provider "
+            "via `WEB_SEARCH_PROVIDER`."
+            if provider == "ddg"
+            else ""
+        )
         return {
             "taxonomy_reports": [
                 {
                     "taxonomy": taxonomy,
                     "queries": [],
                     "sources": [],
-                    "brief_md": f"## {taxonomy} (as of {today_iso})\n\nWeb search failed: {type(e).__name__}: {e}",
+                    "brief_md": f"## {taxonomy} (as of {today_iso})\n\nWeb search failed: {type(e).__name__}: {e}{hint}",
                     "generated_at": generated_at,
                 }
             ]
