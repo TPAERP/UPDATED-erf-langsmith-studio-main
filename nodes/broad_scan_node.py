@@ -2,6 +2,7 @@ from prompts.system_messages import *
 from prompts.source_guide import *
 from prompts.portfolio_allocation import *
 from prompts.system_messages import *
+from prompts.risk_taxonomy import *
 from schemas import *
 from models import broad_scanner_llm
 from helper_functions import *
@@ -18,7 +19,7 @@ def broad_scan_node(state: State) -> Dict[str, Any]:
     state.setdefault("attempts", 0)
     state.setdefault("messages", [])
 
-    taxonomy = ["Geopolitical","Financial","Trade","Macroeconomics","Military conflict","Climate","Technological","Public Health"]
+    taxonomy = RISK_TAXONOMY
 
     system = BROAD_RISK_SCANNER_SYSTEM_MESSAGE.format(
         taxonomy=taxonomy,
@@ -27,6 +28,22 @@ def broad_scan_node(state: State) -> Dict[str, Any]:
         FEW_SHOT_EXAMPLES=FEW_SHOT_EXAMPLES,
         today=today
     )
+
+    taxonomy_reports = state.get("taxonomy_reports", []) or []
+    if taxonomy_reports:
+        briefs = "\n\n".join([(r.get("brief_md") or "").strip() for r in taxonomy_reports if (r.get("brief_md") or "").strip()])
+        if briefs:
+            system = "\n\n".join(
+                [
+                    system,
+                    "--------------------------------------------------------------------",
+                    "WEB HORIZON-SCAN BRIEFS (EVIDENCE INPUT)",
+                    "--------------------------------------------------------------------",
+                    "Use the briefs below as your primary evidence for 'what is happening now'.",
+                    "Do NOT invent facts beyond these briefs; if evidence is missing, say so.",
+                    briefs,
+                ]
+            )
 
     users_query = last_human_content(state["messages"])
     

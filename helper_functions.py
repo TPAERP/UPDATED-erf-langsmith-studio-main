@@ -67,3 +67,38 @@ def format_conversation(messages: List[Any]) -> str:
         elif isinstance(message, AIMessage):
             conversation += f"Assistant: {message.content}\n"
     return conversation
+
+
+def format_taxonomy_reports_md(reports: List[TaxonomyWebReport]) -> str:
+    """
+    Formats per-taxonomy web briefs as markdown, including an explicit source list.
+    """
+    if not reports:
+        return ""
+
+    chunks: List[str] = ["# Horizon Scan — Web Briefs by Taxonomy\n"]
+
+    def _sort_key(r: TaxonomyWebReport) -> str:
+        return (r.get("taxonomy") or "").lower()
+
+    for r in sorted(reports, key=_sort_key):
+        brief = (r.get("brief_md") or "").strip()
+        if brief:
+            chunks.append(brief)
+        else:
+            taxonomy = (r.get("taxonomy") or "").strip() or "Unknown taxonomy"
+            chunks.append(f"## {taxonomy}\n\n- No brief generated.")
+
+        sources = r.get("sources") or []
+        if sources:
+            lines = ["", "**Sources**"]
+            for i, s in enumerate(sources[:20], start=1):
+                published = f" ({s['published']})" if s.get("published") else ""
+                title = s.get("title") or s.get("url") or "Untitled"
+                url = s.get("url") or ""
+                lines.append(f"{i}. {title}{published} — {url}")
+            chunks.append("\n".join(lines))
+
+        chunks.append("\n---\n")
+
+    return "\n".join(chunks).strip()

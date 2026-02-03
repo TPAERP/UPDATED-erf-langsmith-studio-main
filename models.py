@@ -14,6 +14,8 @@ if llm == "openai":
     signpost_evaluator_llm = ChatOpenAI(model=model).with_structured_output(SignpostEvalOutput)
     risk_updater_llm = ChatOpenAI(model=model).with_structured_output(RiskUpdateOutput)
     elaborator_llm = ChatOpenAI(model=model)
+    web_query_llm = ChatOpenAI(model=model).with_structured_output(WebQueryPlan)
+    web_report_llm = ChatOpenAI(model=model)
 elif llm == "deepseek":
     model = "deepseek-chat"
     router_llm = ChatDeepSeek(model=model).with_structured_output(RouterOutput)
@@ -24,3 +26,5 @@ elif llm == "deepseek":
     signpost_evaluator_llm = ChatDeepSeek(model=model).with_structured_output(SignpostEvalOutput)
     risk_updater_llm = ChatDeepSeek(model=model).with_structured_output(RiskUpdateOutput)
     elaborator_llm = ChatDeepSeek(model=model)  
+    web_query_llm = ChatDeepSeek(model=model).with_structured_output(WebQueryPlan)
+    web_report_llm = ChatDeepSeek(model=model)

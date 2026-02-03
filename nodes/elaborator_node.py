@@ -10,8 +10,9 @@ today = datetime.now().strftime("%B %d, %Y")
 
 
 def elaborator_node(state: State) -> Dict[str, Any]:
-    last_query = last_human_content(state["messages"])
-    conversation = format_conversation(state["messages"])
+    messages = state.get("messages", []) or []
+    last_query = last_human_content(messages)
+    conversation = format_conversation(messages)
     current_register = state.get("risk")
 
     system_message = """

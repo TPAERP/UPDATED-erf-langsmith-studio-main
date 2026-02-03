@@ -2,12 +2,15 @@ from prompts.system_messages import *
 from prompts.source_guide import *
 from prompts.portfolio_allocation import *
 from prompts.system_messages import *
+from prompts.risk_taxonomy import *
 from schemas import *
 from models import per_risk_evaluator_llm
 from models import specific_scanner_llm
 from helper_functions import *
 from datetime import datetime
 today = datetime.now().strftime("%B %d, %Y")
+
+taxonomy = RISK_TAXONOMY
 
 def refine_single_risk_node(state: RiskExecutionState) -> Dict[str, Any]:
     """
@@ -22,7 +25,6 @@ def refine_single_risk_node(state: RiskExecutionState) -> Dict[str, Any]:
     if "reasoning_trace" not in current:
         current["reasoning_trace"] = "Initial scan selection."
 
-    taxonomy = ["Geopolitical","Financial","Trade","Macroeconomics","Military conflict","Climate","Technological","Public Health"]
     max_rounds = 3  # Configurable
 
     for round_i in range(1, max_rounds + 1):

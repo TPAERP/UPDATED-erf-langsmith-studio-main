@@ -56,17 +56,46 @@ class RiskFinal(TypedDict):
     reasoning_trace: str
     audit_log: List[str]
 
-class State(TypedDict):
-    # We separate 'drafts' (input) from 'finalized' (output)
-    draft_risks: List[RiskDraft] 
-    
-    # operator.add ensures that when parallel nodes return a list, 
+class WebQueryPlan(TypedDict):
+    queries: List[str] = Field(description="List of web search queries to run")
+
+
+class WebSearchResult(TypedDict):
+    title: str = Field(description="Result title")
+    url: str = Field(description="Result URL")
+    snippet: str = Field(description="Result snippet/description")
+    published: str = Field(description="Published date if available, else empty string")
+
+
+class TaxonomyWebReport(TypedDict):
+    taxonomy: str = Field(description="Risk taxonomy category")
+    queries: List[str] = Field(description="Queries executed for this taxonomy")
+    sources: List[WebSearchResult] = Field(description="Flattened list of search results used")
+    brief_md: str = Field(description="Markdown brief summarizing what is happening now")
+    generated_at: str = Field(description="ISO timestamp when generated")
+
+
+class State(TypedDict, total=False):
+    # Existing structured register (used by updater/Q&A flows)
+    risk: Dict[str, Any]
+
+    # Drafts (input) vs finalized (output)
+    draft_risks: List[RiskDraft]
+
+    # operator.add ensures that when parallel nodes return a list,
     # they are appended to this master list rather than overwriting it.
     finalized_risks: Annotated[List[RiskDraft], operator.add]
-    
+
+    # Parallel web research (one report per taxonomy)
+    taxonomy_reports: Annotated[List[TaxonomyWebReport], operator.add]
+
     messages: Annotated[List[BaseMessage], add_messages]
     attempts: int
 
 # This is the "Sub-State" passed to each parallel worker
 class RiskExecutionState(TypedDict):
     risk_candidate: RiskDraft
+
+
+class TaxonomyExecutionState(TypedDict):
+    taxonomy: str
