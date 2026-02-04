@@ -25,45 +25,22 @@ from helper_functions import *
 
 # import nodes
 from nodes.router_node import *
-from nodes.verify_sources_node import *
-from nodes.compare_events_node import *
-from nodes.summarize_events_node import *
-from nodes.initiate_parallel_relevance_node import *
-from nodes.assess_portfolio_relevance_node import *
 from nodes.relevance_join_node import *
-from nodes.initiate_parallel_web_search_node import *
-from nodes.web_search_node import *
-from nodes.web_search_join_node import *
 from nodes.render_report_node import *
 from nodes.risk_updater_node import *
 from nodes.elaborator_node import *
+
+from agent.scan_subgraph import build_scan_subgraph
+from agent.relevance_subgraph import build_relevance_subgraph
 
 
 # building graph
 
 graph_builder = StateGraph(State)
-graph_builder.add_node("router", lambda state: state) # router returns current state
-
-def _prepare_scan_state(state: State):
-    return {
-        # Ensure keys exist before parallel fan-out
-        "taxonomy_reports": [],
-        "verified_taxonomy_reports": [],
-        "event_clusters": [],
-        "draft_risks": [],
-        "finalized_risks": [],
-        "attempts": state.get("attempts", 0),
-    }
-
-graph_builder.add_node("initiate_web_search", _prepare_scan_state)
-graph_builder.add_node("verify_sources", verify_sources_node)
-graph_builder.add_node("compare_events", compare_events_node)
-graph_builder.add_node("summarize_events", summarize_events_node)
-graph_builder.add_node("initiate_relevance", lambda state: state)
-graph_builder.add_node("assess_portfolio_relevance", assess_portfolio_relevance_node)
+graph_builder.add_node("router", lambda state: state)  # router returns current state
+graph_builder.add_node("scan_subgraph", build_scan_subgraph())
+graph_builder.add_node("relevance_subgraph", build_relevance_subgraph())
 graph_builder.add_node("relevance_join", lambda state: state)
-graph_builder.add_node("web_search", web_search_node)
-graph_builder.add_node("web_search_join", lambda state: state)
 graph_builder.add_node("render_report", render_report_node)
 graph_builder.add_node("risk_updater", risk_updater_node)
 graph_builder.add_node("elaborator", elaborator_node)
@@ -73,33 +50,18 @@ graph_builder.add_conditional_edges(
     "router",
     router_node,
     {
-        "initiate_web_search": "initiate_web_search",
+        "initiate_web_search": "scan_subgraph",
         "risk_updater": "risk_updater",
         "elaborator": "elaborator",
     }
 )
 
-graph_builder.add_conditional_edges("initiate_web_search", initiate_parallel_web_search, ["web_search"])
-graph_builder.add_edge("web_search", "web_search_join")
 graph_builder.add_conditional_edges(
-    "web_search_join",
-    web_search_join_router,
-    {"verify_sources": "verify_sources", "end": END},
-)
-
-graph_builder.add_edge("verify_sources", "compare_events")
-graph_builder.add_edge("compare_events", "summarize_events")
-graph_builder.add_conditional_edges(
-    "summarize_events",
+    "scan_subgraph",
     relevance_router,
-    {"initiate_relevance": "initiate_relevance", "render_report": "render_report"},
+    {"initiate_relevance": "relevance_subgraph", "render_report": "render_report"},
 )
-graph_builder.add_conditional_edges(
-    "initiate_relevance",
-    initiate_parallel_relevance,
-    ["assess_portfolio_relevance"],
-)
-graph_builder.add_edge("assess_portfolio_relevance", "relevance_join")
+graph_builder.add_edge("relevance_subgraph", "relevance_join")
 graph_builder.add_conditional_edges(
     "relevance_join",
     relevance_join_router,
