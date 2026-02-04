@@ -15,6 +15,7 @@ from prompts.system_messages import (
 from prompts.portfolio_allocation import PORTFOLIO_ALLOCATION
 from prompts.risk_taxonomy import RISK_TAXONOMY
 from schemas import RiskDraft, State, TaxonomyWebReport, WebSearchResult
+from helper_functions import normalize_citations_and_sources, dedupe_risks
 
 
 def _build_source_lookup(reports: List[TaxonomyWebReport]) -> Dict[str, WebSearchResult]:
@@ -130,7 +131,7 @@ def summarize_events_node(state: State) -> Dict[str, Any]:
             sources_pool,
         )
         cleaned.append(
-            {
+            normalize_citations_and_sources({
                 "title": (r.get("title") or "").strip(),
                 "category": r.get("category") or [],
                 "narrative": (r.get("narrative") or "").strip(),
@@ -139,7 +140,8 @@ def summarize_events_node(state: State) -> Dict[str, Any]:
                 "portfolio_relevance": portfolio_relevance,
                 "portfolio_relevance_rationale": portfolio_relevance_rationale,
                 "sources": normalized_sources,
-            }
+            })
         )
 
+    cleaned = dedupe_risks(cleaned)
     return {"draft_risks": cleaned}
