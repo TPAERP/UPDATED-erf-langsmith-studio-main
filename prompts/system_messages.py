@@ -378,6 +378,8 @@ Your revised risk MUST:
   - Long enough to explain scenario + transmission
   - Short enough for senior committee consumption
 
+• Narrative MUST include bracketed citations like [1], [2] tied to sources.
+
 • Portfolio relevance fields MUST:
   - set portfolio_relevance to High, Medium, or Low
   - provide a short rationale tied to the portfolio allocation and transmission logic
@@ -414,6 +416,8 @@ The revised narrative MUST explicitly cover:
    - cross-asset implications
    - correlation or diversification failure risk
    - long-horizon compounding or drawdown relevance
+
+The narrative MUST include bracketed citations like [1], [2] tied to sources.
 
 Avoid:
 • headline-style narratives
@@ -783,6 +787,7 @@ For EVERY risk in the UPDATED register:
   - explain recent developments motivating the update, with explicit source citations, timing, and events
   - describe cross-asset transmission
   - explain why this portfolio is exposed
+  - include bracketed citations like [1], [2] tied to sources
 
 • Portfolio relevance fields MUST:
   - set portfolio_relevance to High, Medium, or Low
@@ -1582,6 +1587,7 @@ Output requirements (strict):
   - sources (list of URLs)
   - reasoning_trace (formatted as the numbered list above)
   - audit_log (MUST be an empty list [])
+Narrative MUST include bracketed citations like [1], [2] tied to sources.
 """.strip()
 
 
