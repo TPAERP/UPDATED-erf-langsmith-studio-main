@@ -64,7 +64,7 @@ graph_builder.add_node("elaborator", elaborator_node)
 graph_builder.add_edge(START, "router")
 graph_builder.add_conditional_edges(
     "router",
-    router_node,  # This function returns "broad_scan", "risk_updater", etc.
+    router_node,
     {
         "initiate_web_search": "initiate_web_search",
         "risk_updater": "risk_updater",
