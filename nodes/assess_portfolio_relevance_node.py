@@ -100,9 +100,6 @@ def assess_portfolio_relevance_node(state: RiskExecutionState) -> Dict[str, Any]
 
     passed = False
     last_feedback = "None"
-    source_pool = current.get("sources") or []
-    source_map = _parse_indexed_sources(source_pool)
-    fallback_sources = [entry.split(".", 1)[-1].strip() if isinstance(entry, str) and "." in entry else entry for entry in source_pool]
     for _round_i in range(1, max_rounds + 1):
         formatted_risk = format_risk_md(current, 0)
 
@@ -135,6 +132,15 @@ def assess_portfolio_relevance_node(state: RiskExecutionState) -> Dict[str, Any]
             "reasoning_trace": (assessed.get("reasoning_trace") or current.get("reasoning_trace") or "").strip(),
             "sources": assessed.get("sources") or current.get("sources") or [],
         }
+
+        source_pool = current.get("sources") or []
+        source_map = _parse_indexed_sources(source_pool)
+        fallback_sources = [
+            entry.split(".", 1)[-1].strip()
+            if isinstance(entry, str) and "." in entry
+            else entry
+            for entry in source_pool
+        ]
         normalized_sources = _select_cited_sources(
             current.get("narrative", ""),
             current.get("reasoning_trace", ""),
@@ -142,6 +148,7 @@ def assess_portfolio_relevance_node(state: RiskExecutionState) -> Dict[str, Any]
             fallback_sources,
         )
         current["sources"] = normalized_sources
+        current = normalize_citations_and_sources(current)
 
         reviewer_system = PORTFOLIO_RELEVANCE_REVIEWER_SYSTEM_MESSAGE.format(
             PORTFOLIO_ALLOCATION=PORTFOLIO_ALLOCATION,
