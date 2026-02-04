@@ -1,30 +1,58 @@
-from langchain_openai import ChatOpenAI
+import os
+
 from langchain_deepseek import ChatDeepSeek
+from langchain_openai import ChatOpenAI
+
 from schemas import *
 
-llm = "deepseek"  # "deepseek" or "openai"
+LLM_PROVIDER = "deepseek" # openai or deepseek
+OPENAI_MODEL = "gpt-4o-mini"
+DEEPSEEK_MODEL = "deepseek-chat"
 
-if llm == "openai":
-    model = "gpt-4o-mini"
-    router_llm = ChatOpenAI(model=model).with_structured_output(RouterOutput)
-    broad_scanner_llm = ChatOpenAI(model=model).with_structured_output(BroadScanOutput)
-    specific_scanner_llm = ChatOpenAI(model=model).with_structured_output(RiskDraft)
-    per_risk_evaluator_llm = ChatOpenAI(model=model).with_structured_output(PerRiskEvalOutput)
-    signpost_generator_llm = ChatOpenAI(model=model).with_structured_output(SignpostPack)
-    signpost_evaluator_llm = ChatOpenAI(model=model).with_structured_output(SignpostEvalOutput)
-    risk_updater_llm = ChatOpenAI(model=model).with_structured_output(RiskUpdateOutput)
-    elaborator_llm = ChatOpenAI(model=model)
-    web_query_llm = ChatOpenAI(model=model).with_structured_output(WebQueryPlan)
-    web_report_llm = ChatOpenAI(model=model)
-elif llm == "deepseek":
-    model = "deepseek-chat"
-    router_llm = ChatDeepSeek(model=model).with_structured_output(RouterOutput)
-    broad_scanner_llm = ChatDeepSeek(model=model).with_structured_output(BroadScanOutput)
-    specific_scanner_llm = ChatDeepSeek(model=model).with_structured_output(RiskDraft)
-    per_risk_evaluator_llm = ChatDeepSeek(model=model).with_structured_output(PerRiskEvalOutput)
-    signpost_generator_llm = ChatDeepSeek(model=model).with_structured_output(SignpostPack)
-    signpost_evaluator_llm = ChatDeepSeek(model=model).with_structured_output(SignpostEvalOutput)
-    risk_updater_llm = ChatDeepSeek(model=model).with_structured_output(RiskUpdateOutput)
-    elaborator_llm = ChatDeepSeek(model=model)  
-    web_query_llm = ChatDeepSeek(model=model).with_structured_output(WebQueryPlan)
-    web_report_llm = ChatDeepSeek(model=model)
+OPENAI_WEB_SEARCH_TOOL = {"type": "web_search"}
+
+
+if LLM_PROVIDER == "openai":
+    base_llm = ChatOpenAI(model=OPENAI_MODEL, use_responses_api=True)
+
+    router_llm = base_llm.with_structured_output(RouterOutput)
+    broad_scanner_llm = base_llm.with_structured_output(BroadScanOutput)
+    specific_scanner_llm = base_llm.with_structured_output(RiskDraft)
+    per_risk_evaluator_llm = base_llm.with_structured_output(PerRiskEvalOutput)
+    signpost_generator_llm = base_llm.with_structured_output(SignpostPack)
+    signpost_evaluator_llm = base_llm.with_structured_output(SignpostEvalOutput)
+    risk_updater_llm = base_llm.with_structured_output(RiskUpdateOutput)
+    elaborator_llm = base_llm
+
+    web_query_llm = base_llm.with_structured_output(WebQueryPlan)
+    web_report_llm = base_llm
+    web_search_llm = base_llm.bind_tools(
+        [OPENAI_WEB_SEARCH_TOOL],
+        tool_choice="required",
+        include=["web_search_call.action.sources"],
+    )
+elif LLM_PROVIDER == "deepseek":
+    base_llm = ChatDeepSeek(model=DEEPSEEK_MODEL)
+
+    router_llm = base_llm.with_structured_output(RouterOutput)
+    broad_scanner_llm = base_llm.with_structured_output(BroadScanOutput)
+    specific_scanner_llm = base_llm.with_structured_output(RiskDraft)
+    per_risk_evaluator_llm = base_llm.with_structured_output(PerRiskEvalOutput)
+    signpost_generator_llm = base_llm.with_structured_output(SignpostPack)
+    signpost_evaluator_llm = base_llm.with_structured_output(SignpostEvalOutput)
+    risk_updater_llm = base_llm.with_structured_output(RiskUpdateOutput)
+    elaborator_llm = base_llm
+
+    web_query_llm = base_llm.with_structured_output(WebQueryPlan)
+    web_report_llm = ChatOpenAI(model=OPENAI_MODEL, use_responses_api=True).bind_tools(
+        [OPENAI_WEB_SEARCH_TOOL],
+        tool_choice="required",
+        include=["web_search_call.action.sources"],
+    )
+    web_search_llm = ChatOpenAI(model=OPENAI_MODEL, use_responses_api=True).bind_tools(
+        [OPENAI_WEB_SEARCH_TOOL],
+        tool_choice="required",
+        include=["web_search_call.action.sources"],
+    )
+else:
+    raise ValueError(f"Unsupported LLM_PROVIDER={LLM_PROVIDER!r}. Use 'openai' or 'deepseek'.")
