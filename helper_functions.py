@@ -28,6 +28,8 @@ def format_risk_md(r: RiskDraft, i: int) -> str:
     if r.get("reasoning_trace"):
         reasoning_section += f"\n**Analyst Reasoning:**\n{r['reasoning_trace']}\n"
 
+    sources_section = _format_sources_section(r.get("sources") or [])
+
     return "\n".join([
         f"## Risk {i}: {r['title']}",
         f"**Categories:** {categories_str}",
@@ -35,6 +37,7 @@ def format_risk_md(r: RiskDraft, i: int) -> str:
         "**Narrative**",
         r["narrative"].strip(),
         reasoning_section,
+        sources_section,
         audit_section,
         "",
         "---",
@@ -49,6 +52,25 @@ def format_all_risks_md(risks: List[RiskDraft]) -> str:
     for i, r in enumerate(risks, start=1):
         md.append(format_risk_md(r, i))
     return "\n".join(md)
+
+
+def _format_sources_section(sources: List[str]) -> str:
+    if not sources:
+        return ""
+    lines = ["**Sources**"]
+    for i, entry in enumerate(sources, start=1):
+        if isinstance(entry, str) and _is_indexed_source(entry):
+            lines.append(entry.strip())
+        else:
+            lines.append(f"{i}. {entry}")
+    return "\n".join(lines)
+
+
+def _is_indexed_source(entry: str) -> bool:
+    if not entry:
+        return False
+    prefix = entry.lstrip().split(" ", 1)[0].rstrip(".")
+    return prefix.isdigit()
 
 def format_signposts_md(signposts: List[Signpost]) -> str:
     lines = ["**Signposts (3)**"]
@@ -96,7 +118,9 @@ def format_taxonomy_reports_md(reports: List[TaxonomyWebReport]) -> str:
                 published = f" ({s['published']})" if s.get("published") else ""
                 title = s.get("title") or s.get("url") or "Untitled"
                 url = s.get("url") or ""
-                lines.append(f"{i}. {title}{published} — {url}")
+                reliability = s.get("reliability")
+                reliability_text = f" — Reliability: {reliability}" if reliability else ""
+                lines.append(f"{i}. {title}{published} — {url}{reliability_text}")
             chunks.append("\n".join(lines))
 
         chunks.append("\n---\n")

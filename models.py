@@ -19,10 +19,16 @@ if LLM_PROVIDER == "openai":
     broad_scanner_llm = base_llm.with_structured_output(BroadScanOutput)
     specific_scanner_llm = base_llm.with_structured_output(RiskDraft)
     per_risk_evaluator_llm = base_llm.with_structured_output(PerRiskEvalOutput)
+    relevance_assessor_llm = base_llm.with_structured_output(RiskDraft)
+    relevance_reviewer_llm = base_llm.with_structured_output(RelevanceReviewOutput)
     signpost_generator_llm = base_llm.with_structured_output(SignpostPack)
     signpost_evaluator_llm = base_llm.with_structured_output(SignpostEvalOutput)
     risk_updater_llm = base_llm.with_structured_output(RiskUpdateOutput)
     elaborator_llm = base_llm
+
+    source_verifier_llm = base_llm.with_structured_output(SourceReliabilityOutput)
+    event_compare_llm = base_llm.with_structured_output(EventClusterOutput)
+    event_risk_summarizer_llm = base_llm.with_structured_output(EventRiskDraftOutput)
 
     web_query_llm = base_llm.with_structured_output(WebQueryPlan)
     web_report_llm = base_llm
@@ -38,10 +44,16 @@ elif LLM_PROVIDER == "deepseek":
     broad_scanner_llm = base_llm.with_structured_output(BroadScanOutput)
     specific_scanner_llm = base_llm.with_structured_output(RiskDraft)
     per_risk_evaluator_llm = base_llm.with_structured_output(PerRiskEvalOutput)
+    relevance_assessor_llm = base_llm.with_structured_output(RiskDraft)
+    relevance_reviewer_llm = base_llm.with_structured_output(RelevanceReviewOutput)
     signpost_generator_llm = base_llm.with_structured_output(SignpostPack)
     signpost_evaluator_llm = base_llm.with_structured_output(SignpostEvalOutput)
     risk_updater_llm = base_llm.with_structured_output(RiskUpdateOutput)
     elaborator_llm = base_llm
+
+    source_verifier_llm = base_llm.with_structured_output(SourceReliabilityOutput)
+    event_compare_llm = base_llm.with_structured_output(EventClusterOutput)
+    event_risk_summarizer_llm = base_llm.with_structured_output(EventRiskDraftOutput)
 
     web_query_llm = base_llm.with_structured_output(WebQueryPlan)
     web_report_llm = ChatOpenAI(model=OPENAI_MODEL, use_responses_api=True).bind_tools(

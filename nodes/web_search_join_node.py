@@ -6,5 +6,5 @@ def web_search_join_router(state: State) -> str:
     """Barrier: proceed only after all taxonomy reports are present."""
     expected = len(RISK_TAXONOMY)
     have = len(state.get("taxonomy_reports", []) or [])
-    return "broad_scan" if have >= expected else "end"
+    return "verify_sources" if have >= expected else "end"
 

@@ -24,6 +24,12 @@ def refine_single_risk_node(state: RiskExecutionState) -> Dict[str, Any]:
         current["audit_log"] = ["Draft generated during broad horizon scanning."]
     if "reasoning_trace" not in current:
         current["reasoning_trace"] = "Initial scan selection."
+    if "portfolio_relevance" not in current:
+        current["portfolio_relevance"] = "Medium"
+    if "portfolio_relevance_rationale" not in current:
+        current["portfolio_relevance_rationale"] = "Relevance not specified; requires review."
+    if "sources" not in current:
+        current["sources"] = []
 
     max_rounds = 3  # Configurable
 
@@ -74,6 +80,16 @@ def refine_single_risk_node(state: RiskExecutionState) -> Dict[str, Any]:
             SystemMessage(content=spec_system),
             HumanMessage(content=spec_user),
         ])
+
+        if "portfolio_relevance" not in new_draft:
+            new_draft["portfolio_relevance"] = current.get("portfolio_relevance", "Medium")
+        if "portfolio_relevance_rationale" not in new_draft:
+            new_draft["portfolio_relevance_rationale"] = current.get(
+                "portfolio_relevance_rationale",
+                "Relevance not specified; requires review.",
+            )
+        if "sources" not in new_draft:
+            new_draft["sources"] = current.get("sources", [])
         
         # Merge Audit Logs
         new_draft["audit_log"] = current["audit_log"] + ["Narrative refined to address feedback."]
