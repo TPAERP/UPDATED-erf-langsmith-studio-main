@@ -13,5 +13,6 @@ def render_report_node(state: State):
     Renders the final risk register as markdown.
     """
     finalized = state.get("finalized_risks", []) or []
+    finalized = dedupe_risks(finalized)
     final_md = format_all_risks_md(finalized) if finalized else ""
     return {"messages": [AIMessage(content=final_md)]}
