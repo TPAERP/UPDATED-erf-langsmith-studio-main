@@ -1,4 +1,5 @@
 from schemas import *
+import re
 
 def last_human_content(messages: List[BaseMessage]) -> str:
     """
@@ -71,6 +72,110 @@ def _is_indexed_source(entry: str) -> bool:
         return False
     prefix = entry.lstrip().split(" ", 1)[0].rstrip(".")
     return prefix.isdigit()
+
+def dedupe_risks(risks: List[RiskDraft]) -> List[RiskDraft]:
+    """
+    Remove exact duplicate risks based on a canonicalized fingerprint.
+    Keeps the first occurrence and drops subsequent duplicates.
+    """
+    def _as_list(value: Any) -> List[str]:
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [str(v) for v in value]
+        return [str(value)]
+
+    def _fingerprint(risk: RiskDraft) -> tuple:
+        title = str(risk.get("title", "")).strip().lower()
+
+        category_raw = risk.get("category")
+        categories = [c.strip().lower() for c in _as_list(category_raw) if str(c).strip()]
+        categories_sorted = tuple(sorted(categories))
+
+        narrative = str(risk.get("narrative", "")).strip()
+        portfolio_relevance = str(risk.get("portfolio_relevance", "")).strip()
+        portfolio_relevance_rationale = str(
+            risk.get("portfolio_relevance_rationale", "")
+        ).strip()
+
+        sources_raw = risk.get("sources") or []
+        sources = [str(s).strip() for s in _as_list(sources_raw) if str(s).strip()]
+        sources_sorted = tuple(sorted(sources))
+
+        reasoning_trace = str(risk.get("reasoning_trace", "")).strip()
+
+        audit_log_raw = risk.get("audit_log") or []
+        audit_log = tuple(_as_list(audit_log_raw))
+
+        return (
+            title,
+            categories_sorted,
+            narrative,
+            portfolio_relevance,
+            portfolio_relevance_rationale,
+            sources_sorted,
+            reasoning_trace,
+            audit_log,
+        )
+
+    deduped: List[RiskDraft] = []
+    seen = set()
+    for risk in risks or []:
+        key = _fingerprint(risk)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(risk)
+    return deduped
+
+def normalize_citations_and_sources(risk: RiskDraft) -> RiskDraft:
+    """
+    Reindex sources contiguously and rewrite bracket citations to match.
+    This prevents mismatches like [3] referencing a source listed as 1.
+    """
+    sources = risk.get("sources") or []
+    if not sources:
+        return risk
+
+    entries = []
+    for pos, entry in enumerate(sources, start=1):
+        old_index = pos
+        text = entry
+        if isinstance(entry, str):
+            stripped = entry.strip()
+            match = re.match(r"^(\\d+)\\.\\s*(.+)$", stripped)
+            if match:
+                old_index = int(match.group(1))
+                text = match.group(2).strip()
+            else:
+                text = stripped
+        entries.append({"old_index": old_index, "text": str(text).strip()})
+
+    if not entries:
+        return risk
+
+    old_to_new = {e["old_index"]: idx for idx, e in enumerate(entries, start=1)}
+
+    def _rewrite(text: str) -> str:
+        if not text:
+            return text
+        def repl(match: re.Match[str]) -> str:
+            idx = int(match.group(1))
+            new_idx = old_to_new.get(idx)
+            return f"[{new_idx}]" if new_idx is not None else match.group(0)
+        return re.sub(r"\\[(\\d+)\\]", repl, text)
+
+    narrative = _rewrite(risk.get("narrative", ""))
+    reasoning = _rewrite(risk.get("reasoning_trace", ""))
+
+    new_sources = [f"{i}. {e['text']}" for i, e in enumerate(entries, start=1) if e["text"]]
+
+    return {
+        **risk,
+        "narrative": narrative,
+        "reasoning_trace": reasoning,
+        "sources": new_sources,
+    }
 
 def format_signposts_md(signposts: List[Signpost]) -> str:
     lines = ["**Signposts (3)**"]
