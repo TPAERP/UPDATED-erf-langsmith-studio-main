@@ -74,6 +74,14 @@ class WebQueryPlan(TypedDict):
     queries: List[str] = Field(description="List of web search queries to run")
 
 
+class WebBriefOutput(TypedDict):
+    brief_md: str = Field(description="Markdown brief for a taxonomy")
+
+
+class ElaboratorOutput(TypedDict):
+    answer: str = Field(description="Answer text for risk register Q&A")
+
+
 class WebSearchResultBase(TypedDict):
     title: str = Field(description="Result title")
     url: str = Field(description="Result URL")

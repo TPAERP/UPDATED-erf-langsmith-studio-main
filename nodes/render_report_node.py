@@ -1,18 +1,10 @@
-from prompts.system_messages import *
-from prompts.source_guide import *
-from prompts.portfolio_allocation import *
-from prompts.system_messages import *
-from schemas import *
-from helper_functions import *
-from datetime import datetime
-today = datetime.now().strftime("%B %d, %Y")
+from langchain_core.messages import AIMessage
+
+from agent.agents.registry import render_report_agent
+from schemas import State
 
 
 def render_report_node(state: State):
-    """
-    Renders the final risk register as markdown.
-    """
-    finalized = state.get("finalized_risks", []) or []
-    finalized = dedupe_risks(finalized)
-    final_md = format_all_risks_md(finalized) if finalized else ""
+    """Controller node: delegate markdown rendering of final risk register."""
+    final_md = render_report_agent(state)
     return {"messages": [AIMessage(content=final_md)]}

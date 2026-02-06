@@ -143,7 +143,7 @@ def normalize_citations_and_sources(risk: RiskDraft) -> RiskDraft:
         text = entry
         if isinstance(entry, str):
             stripped = entry.strip()
-            match = re.match(r"^(\\d+)\\.\\s*(.+)$", stripped)
+            match = re.match(r"^(\d+)\.\s*(.+)$", stripped)
             if match:
                 old_index = int(match.group(1))
                 text = match.group(2).strip()
@@ -163,7 +163,7 @@ def normalize_citations_and_sources(risk: RiskDraft) -> RiskDraft:
             idx = int(match.group(1))
             new_idx = old_to_new.get(idx)
             return f"[{new_idx}]" if new_idx is not None else match.group(0)
-        return re.sub(r"\\[(\\d+)\\]", repl, text)
+        return re.sub(r"\[(\d+)\]", repl, text)
 
     narrative = _rewrite(risk.get("narrative", ""))
     reasoning = _rewrite(risk.get("reasoning_trace", ""))

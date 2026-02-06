@@ -1,4 +1,4 @@
-from langgraph.constants import Send
+﻿from langgraph.types import Send
 
 from prompts.risk_taxonomy import RISK_TAXONOMY
 from schemas import State
