@@ -69,7 +69,7 @@ class WebSearchExecutionTool(KwargTool):
         query = str(kwargs.get("query") or "").strip()
         if not query:
             return []
-        num = int(kwargs.get("num") or 4)
+        num = int(kwargs.get("num") or 10)
         client = kwargs.get("search_client") or web_search_llm
         message = client.invoke(query)
         raw_sources = _find_sources(getattr(message, "content", message))

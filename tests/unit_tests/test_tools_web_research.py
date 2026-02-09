@@ -42,6 +42,30 @@ def test_web_search_execution_tool_extracts_and_normalizes_sources():
     assert out[0]["title"] == "T1"
 
 
+def test_web_search_execution_tool_search_mode_defaults_to_ten_results():
+    class _StubClient:
+        def invoke(self, _query):
+            return SimpleNamespace(
+                content=[
+                    {
+                        "sources": [
+                            {
+                                "title": f"T{i}",
+                                "url": f"https://example.com/{i}",
+                                "snippet": "S",
+                                "published": "2026-02-01",
+                            }
+                            for i in range(12)
+                        ]
+                    }
+                ]
+            )
+
+    tool = WebSearchExecutionTool()
+    out = tool.run(query="test query", search_client=_StubClient())
+    assert len(out) == 10
+
+
 def test_taxonomy_brief_formatting_tool_formats_and_normalizes_brief():
     tool = TaxonomyBriefFormattingTool()
     block = tool.run(

@@ -23,7 +23,7 @@ class WebSearchAgent:
                 "Rules:\n"
                 "- Focus on developments from the last 7-14 days relative to today's date.\n"
                 "- Prefer queries that surface specific events (policy decisions, macro releases, conflicts, regulations, outages).\n"
-                "- Return 1 to 5 queries, each <= 12 words.\n"
+                "- Return exactly 5 queries, each <= 12 words.\n"
                 "- No quotes, no markdown, no commentary.\n"
                 "- Return JSON with key 'queries'."
             ),
@@ -51,6 +51,39 @@ class WebSearchAgent:
             ),
         )
 
+    @staticmethod
+    def _fallback_queries(taxonomy: str) -> list[str]:
+        return [
+            f"{taxonomy} latest developments",
+            f"{taxonomy} policy changes last week",
+            f"{taxonomy} market impact recent",
+            f"{taxonomy} regulatory updates recent",
+            f"{taxonomy} major incidents past week",
+            f"{taxonomy} official statements latest",
+            f"{taxonomy} central bank and macro updates",
+            f"{taxonomy} supply chain disruptions recent",
+        ]
+
+    def _ensure_five_queries(self, taxonomy: str, raw_queries: list[Any]) -> list[str]:
+        queries = self.search_tool.run(
+            mode="dedupe_queries",
+            queries=raw_queries,
+            max_queries=5,
+        )
+        if len(queries) >= 5:
+            return queries[:5]
+
+        seen = {str(query).strip().lower() for query in queries}
+        for candidate in self._fallback_queries(taxonomy):
+            key = candidate.strip().lower()
+            if key in seen:
+                continue
+            queries.append(candidate)
+            seen.add(key)
+            if len(queries) >= 5:
+                break
+        return queries[:5]
+
     def __call__(self, state: dict[str, Any]) -> dict[str, Any]:
         taxonomy = str(state.get("taxonomy") or "").strip()
         generated_at = datetime.now(timezone.utc).isoformat()
@@ -66,30 +99,17 @@ class WebSearchAgent:
             }
 
         query_out = self.query_agent({}, taxonomy=taxonomy, today_iso=today_iso)
-        queries = self.search_tool.run(
-            mode="dedupe_queries",
-            queries=query_out.get("queries") or [],
-            max_queries=5,
+        queries = self._ensure_five_queries(
+            taxonomy=taxonomy,
+            raw_queries=query_out.get("queries") or [],
         )
-        if not queries:
-            queries = [
-                f"{taxonomy} latest developments",
-                f"{taxonomy} policy changes last week",
-                f"{taxonomy} market impact recent",
-            ]
 
         sources: list[dict[str, Any]] = []
-        seen_urls: set[str] = set()
-        for query in queries[:4]:
-            query_results = self.search_tool.run(query=query, num=4)
-            for result in query_results:
-                url = str(result.get("url") or "").strip()
-                if not url or url in seen_urls:
-                    continue
-                seen_urls.add(url)
-                sources.append(result)
+        for query in queries:
+            query_results = self.search_tool.run(query=query, num=10)
+            sources.extend(query_results)
 
-        sources_block = self.brief_formatter.run(mode="sources_block", sources=sources[:20])
+        sources_block = self.brief_formatter.run(mode="sources_block", sources=sources)
         report_out = self.report_agent(
             {},
             taxonomy=taxonomy,
@@ -106,7 +126,7 @@ class WebSearchAgent:
         return {
             "taxonomy": taxonomy,
             "queries": queries,
-            "sources": sources[:50],
+            "sources": sources,
             "brief_md": brief_md,
             "generated_at": generated_at,
         }
