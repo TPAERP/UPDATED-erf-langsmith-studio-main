@@ -4,7 +4,7 @@ from typing import Any
 
 from agent.tools.base import KwargTool
 
-from models import web_search_llm
+from models import get_web_search_llm
 
 
 def _find_sources(obj: Any) -> list[dict[str, Any]]:
@@ -70,8 +70,12 @@ class WebSearchExecutionTool(KwargTool):
         if not query:
             return []
         num = int(kwargs.get("num") or 10)
-        client = kwargs.get("search_client") or web_search_llm
-        message = client.invoke(query)
+        client = kwargs.get("search_client") or get_web_search_llm()
+        # Force non-streaming here to avoid chunk-shape mismatches in tool paths.
+        try:
+            message = client.invoke(query, stream=False)
+        except TypeError:
+            message = client.invoke(query)
         raw_sources = _find_sources(getattr(message, "content", message))
         return self._normalize_sources(raw_sources, limit=num)
 

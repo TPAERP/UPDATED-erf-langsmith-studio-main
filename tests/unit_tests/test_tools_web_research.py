@@ -44,7 +44,11 @@ def test_web_search_execution_tool_extracts_and_normalizes_sources():
 
 def test_web_search_execution_tool_search_mode_defaults_to_ten_results():
     class _StubClient:
-        def invoke(self, _query):
+        def __init__(self) -> None:
+            self.calls: list[dict[str, object]] = []
+
+        def invoke(self, _query, **kwargs):
+            self.calls.append(dict(kwargs))
             return SimpleNamespace(
                 content=[
                     {
@@ -61,9 +65,43 @@ def test_web_search_execution_tool_search_mode_defaults_to_ten_results():
                 ]
             )
 
+    client = _StubClient()
     tool = WebSearchExecutionTool()
-    out = tool.run(query="test query", search_client=_StubClient())
+    out = tool.run(query="test query", search_client=client)
     assert len(out) == 10
+    assert client.calls == [{"stream": False}]
+
+
+def test_web_search_execution_tool_search_mode_falls_back_when_stream_kwarg_fails():
+    class _StubClient:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, object]] = []
+
+        def invoke(self, _query, **kwargs):
+            self.calls.append(dict(kwargs))
+            if kwargs:
+                raise TypeError("unexpected keyword argument")
+            return SimpleNamespace(
+                content=[
+                    {
+                        "sources": [
+                            {
+                                "title": f"T{i}",
+                                "url": f"https://example.com/{i}",
+                                "snippet": "S",
+                                "published": "2026-02-01",
+                            }
+                            for i in range(12)
+                        ]
+                    }
+                ]
+            )
+
+    client = _StubClient()
+    tool = WebSearchExecutionTool()
+    out = tool.run(query="test query", search_client=client)
+    assert len(out) == 10
+    assert client.calls == [{"stream": False}, {}]
 
 
 def test_taxonomy_brief_formatting_tool_formats_and_normalizes_brief():
